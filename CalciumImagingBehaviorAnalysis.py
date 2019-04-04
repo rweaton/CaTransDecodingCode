@@ -17,7 +17,7 @@ PathToFile = ''
 CellFluorTraces_Frame = pd.read_csv(PathToFile, header=0)
 
 # Generate an index list for later referencing
-Indices = np.arange(0,CellFluorTraces_Frame['#'].size)
+Indices = np.arange(0, CellFluorTraces_Frame['#'].size)
 
 # Define a dictionary of key name pairs for referencing columns in the dataframe.
 # 
@@ -71,6 +71,9 @@ M6T1_Entry_ind = Indices[Filt]
 M6T1_Entry_ts = CellFluorTraces_Frame[ColumnNames['M6T1_in']][M6T1_Entry_ind]
 
 # Extract Marker 6 CT exit events
+Filt = np.hstack((False, np.diff(CellFluorTraces_Frame[ColumnNames['M6CT_out']])== 1))
+M6CT_Exit_ind = Indices[Filt]
+M6CT_Exit_ts = CellFluorTraces_Frame[ColumnNames['M6CT_out']][M6CT_Exit_ind]
 
 # Extract Marker 7 T0 entry events
 Filt = np.hstack((False, np.diff(CellFluorTraces_Frame[ColumnNames['M7T0_in']])== 1))
@@ -83,5 +86,31 @@ M7T1_Entry_ind = Indices[Filt]
 M7T1_Entry_ts = CellFluorTraces_Frame[ColumnNames['M7T1_in']][M6T1_Entry_ind]
 
 # Extract Marker 7 CT exit events
+Filt = np.hstack((False, np.diff(CellFluorTraces_Frame[ColumnNames['M7CT_out']])== 1))
+M7CT_Exit_ind = Indices[Filt]
+M7CT_Exit_ts = CellFluorTraces_Frame[ColumnNames['M7CT_out']][M7CT_Exit_ind]
 
-
+# Write a function that tests if each entry t_2 in tlist2 is within the range 
+# [t_1 + tol_lo, t_1 + tol_hi) for each entry in tlist1.  Output is an object array of size 
+# tlist1.size having each field contain a list of indices that point to all entries
+# in tlist2 that lie within the range. Note, for t + tol_lo to precede t, tol_lo must
+# be negative-valued.
+def EventComparator(tlist1, tlist2, tol_window):
+  
+  # Extract low tolerance and high tolerance boundaries from the tol_window tuple.
+  (tol_lo, tol_hi) = tol_window
+  
+  # Generate index lists for subsequent iteration and filtering procedures.
+  tlist2_ind = np.arange(0, tlist2.size)
+  tlist1_ind = np.arange(0, tlist1.size)
+  
+  # Pre-allocate array dimensions for output array.
+  output = np.nan*np.ones(tlist1.size,1)
+  
+  for i in tlist1_ind:
+    
+    filt = (tlist2 >= tlist1[i] + tol_lo) and (tlist2 < tlist1[i] + tol_hi)
+    output[i] = np.array([tlist2[filt], tlist2_ind[filt]])
+   
+  return output
+  
