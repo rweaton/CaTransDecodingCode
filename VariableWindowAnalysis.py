@@ -10,8 +10,10 @@ import numpy as np
 from PeriEventTraceFuncLib import *
 
 # Paths to data in JSON formatted files
-PathToBehavFile = '/home/thugwithyoyo/Desktop/MAE298_Project/CalciumImagingData/2018-12-10-11-37-56_B.json'
-PathToFluorFile = '/home/thugwithyoyo/Desktop/MAE298_Project/CalciumImagingData/2018-12-10-11-37-56_C.json'
+#PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10-11-37-56_B.json'
+#PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10-11-37-56_C.json'
+PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-14-11-01-41_B.json'
+PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-14-11-01-41_C.json'
 
 # Peripheral target entry events
 RefEventsList = ['M6T0_Entry_ts', 'M6T1_Entry_ts']
@@ -38,6 +40,7 @@ BoundaryWindow = [-1., 2.]
 StepWidth = 0.1
 WindowWidth = 0.4
 
+
 #ForwardArray = np.round(np.arange(BoundaryWindow[0] + StepWidth, 
 #                                  BoundaryWindow[1] + 0.5*StepWidth, 
 #                                  StepWidth)/StepWidth)*StepWidth
@@ -61,7 +64,21 @@ nLatents = 5
 nRepetitions = 30
 ConfLevel = 0.95
 
+# Specified anti-tolerance window, relative to target entry, for detecting and
+# removing repeat entries that followed shortly after the initial entry.
+RelativeTolWindow = (0.0001, 2.5)
+
+# Generate the unfiltered behavior dictionary.
 BehavDict = BehavDictGen(PathToBehavFile)
+
+# Detect rapid repeats within each event list.
+EventFilters = RemoveRepeatTargetEntries(BehavDict, RefEventsList, 
+                                         RelativeTolWindow)
+
+# Remove repeat events
+for ef in EventFilters:
+    
+    BehavDict[ef] = BehavDict[ef][EventFilters[ef]]
 
 CellFluorTraces_Frame = CellFluorTraces_FrameGen(PathToFluorFile)
 

@@ -9,8 +9,8 @@ import numpy as np
 from PeriEventTraceFuncLib import *
 
 # Paths to data in JSON formatted files
-PathToBehavFile = '/home/thugwithyoyo/Desktop/MAE298_Project/CalciumImagingData/2018-12-10-11-37-56_B.json'
-PathToFluorFile = '/home/thugwithyoyo/Desktop/MAE298_Project/CalciumImagingData/2018-12-10-11-37-56_C.json'
+PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10-11-37-56_B.json'
+PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10-11-37-56_C.json'
 
 # Peripheral target entry events
 RefEventsList = ['M6T0_Entry_ts', 'M6T1_Entry_ts']
@@ -46,8 +46,23 @@ nLatents = 5
 nRepetitions = 30
 ConfLevel = 0.95
 
+# Specified anti-tolerance window, relative to target entry, for detecting and
+# removing repeat entries that followed shortly after the initial entry.
+RelativeTolWindow = (0.0001, 2.5)
+
+# Generate the unfiltered behavior dictionary.
 BehavDict = BehavDictGen(PathToBehavFile)
 
+# Detect rapid repeats within each event list.
+EventFilters = RemoveRepeatTargetEntries(BehavDict, RefEventsList, 
+                                         RelativeTolWindow)
+
+# Remove repeat events
+for ef in EventFilters:
+    
+    BehavDict[ef] = BehavDict[ef][EventFilters[ef]]
+
+# Generate the data frame of calcium transients.
 CellFluorTraces_Frame = CellFluorTraces_FrameGen(PathToFluorFile)
 
 # Grow window forwards from floor
@@ -83,7 +98,7 @@ for i in np.arange(0, nDomains):
 fig1, axs1 = plt.subplots()
 #fig1.suptitle(PerformancePlotSpecDict['measure'])
 GenerateConfIntsPlot(ConfInts, Performance, PerformancePlotSpecDict, 
-                     axs1, 'fw')
+                     axs1, 'fw_sliding')
 
 axs1.set_xbound(lower=BoundaryWindow[0], upper=BoundaryWindow[1])
 axs1.set_ybound(lower=0.4, upper=1.)
@@ -92,6 +107,6 @@ axs1.set_ybound(lower=0.4, upper=1.)
 fig2, axs2 = plt.subplots()
 #fig2.suptitle(MutInfoPlotSpecDict['measure'])
 GenerateConfIntsPlot(ConfInts, Performance, MutInfoPlotSpecDict, 
-                     axs2, 'fw')
+                     axs2, 'fw_sliding')
 axs2.set_xbound(lower=BoundaryWindow[0], upper=BoundaryWindow[1])
 axs2.set_ybound(lower=0., upper=1.)

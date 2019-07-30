@@ -58,6 +58,30 @@ def CellFluorTraces_FrameGen(PathToFluorFile):
         print('Calcium fluorescence traces: unrecognized file format.')
 
     return CellFluorTraces_Frame
+
+def RemoveRepeatTargetEntries(BehavDict, RefEventsList, RelativeTolWindow):
+
+    # Peripheral target entry events
+    #RefEventsList = ['M6T0_Entry_ts', 'M6T1_Entry_ts']
+
+    #BehavDict = BehavDictGen(PathToBehavFile)
+    nEventListsToFilter = len(RefEventsList)
+    
+    #RapidRepeatDict = np.empty((nEventListsToFilter,), dtype=dict)
+    EventFilters = defaultdict(dict)
+    
+    for i in np.arange(0, nEventListsToFilter):
+        
+        #ComparatorDict = CIBA.EventComparator(tlist1, tlist2, tol_window)
+        RapidRepeatDict =  CIBA.EventComparator(
+                                        BehavDict[RefEventsList[i]].values, 
+                                        BehavDict[RefEventsList[i]].values, 
+                                        RelativeTolWindow)
+        
+        EventFilters[RefEventsList[i]] = CIBA.RemoveEventsInTolWindowFiltGen(
+                                            RapidRepeatDict)
+
+    return EventFilters
     
 def PeriEventExtractor_Trace(BehavDict, CellFluorTraces_Frame, RefEventsDict, BoundaryWindow):
     
@@ -454,6 +478,13 @@ def GenerateConfIntsPlot(ArrayOfConfIntsDicts, ArrayOfPerformanceDicts, PlotSpec
             
             X[i] = np.max(ArrayOfConfIntsDicts[i]['PeriEventDomain']) - 0.5*StepSize
             TraceLabel = 'pos. cumulative span from '+ str(ArrayOfConfIntsDicts[i]['PeriEventDomain'][0]) +' sec.'
+            
+        elif (Direction == 'fw_sliding'):
+            
+            X[i] = np.mean(np.array(ArrayOfConfIntsDicts[i]['PeriEventDomain']))
+            WindowWidth = np.diff(np.array(ArrayOfConfIntsDicts[0]['PeriEventDomain']))[0]
+            TraceLabel = 'Window of width '+str(WindowWidth)+' sec. slid over ' \
+                            +str(round(StepSize, 3))+' sec. increments.'
             
 #        Y_median[i] = ArrayOfConfIntsDicts[i]['performance_median']
         Y_median[i] = ArrayOfConfIntsDicts[i][PlotSpecDict['measure_median']]

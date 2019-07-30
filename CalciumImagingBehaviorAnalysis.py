@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import json
+import collections
 
 def CinePlexFromMatJSON_parser(PathToBehavFile):
     
@@ -73,31 +74,73 @@ def CinePlexFromMatJSON_parser(PathToBehavFile):
     Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6T0_in']])== 1))
     M6T0_Entry_ind = Indices[Filt]
     M6T0_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6T0_Entry_ind]
+        
+    # Extract Marker 6 T0 exit events
+    Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6T0_in']])== -1))
+    M6T0_Exit_ind = Indices[Filt]
+    M6T0_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6T0_Exit_ind]
     
     # Extract Marker 6 T1 entry events
     Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6T1_in']])== 1))
     M6T1_Entry_ind = Indices[Filt]
     M6T1_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6T1_Entry_ind]
+    
+    # Extract Marker 6 T1 exit events
+    Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6T1_in']])== -1))
+    M6T1_Exit_ind = Indices[Filt]
+    M6T1_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6T1_Exit_ind]    
+    
+    # Extract Marker 6 CT exit events
+    #Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6CT_out']])== 1))
+    #M6CT_Exit_ind = Indices[Filt]
+    #M6CT_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6CT_Exit_ind]
 
     # Extract Marker 7 T0 entry events
     Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7T0_in']])== 1))
     M7T0_Entry_ind = Indices[Filt]
     M7T0_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7T0_Entry_ind]
     
+    # Extract Marker 7 T0 exit events
+    Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7T0_in']])== -1))
+    M7T0_Exit_ind = Indices[Filt]
+    M7T0_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7T0_Exit_ind]    
+    
     # Extract Marker 7 T1 entry events
     Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7T1_in']])== 1))
     M7T1_Entry_ind = Indices[Filt]
     M7T1_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7T1_Entry_ind]
-      
+    
+    # Extract Marker 7 T1 entry events
+    Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7T1_in']])== -1))
+    M7T1_Exit_ind = Indices[Filt]
+    M7T1_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7T1_Exit_ind]
+    
+    # Extract Marker 7 CT exit events
+    #Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7CT_out']])== 1))
+    #M7CT_Exit_ind = Indices[Filt]
+    #M7CT_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7CT_Exit_ind]
+ 
     return {
             'M6T0_Entry_ind' : M6T0_Entry_ind,
             'M6T0_Entry_ts': M6T0_Entry_ts,
+            'M6T0_Exit_ind' : M6T0_Exit_ind,
+            'M6T0_Exit_ts' : M6T0_Exit_ts,
             'M6T1_Entry_ind' : M6T1_Entry_ind,
             'M6T1_Entry_ts' : M6T1_Entry_ts,
+            'M6T1_Exit_ind' : M6T1_Exit_ind,
+            'M6T1_Exit_ts'  : M6T1_Exit_ts,
+            #'M6CT_Exit_ind' : M6CT_Exit_ind,
+            #'M6CT_Exit_ts' : M6CT_Exit_ts,
             'M7T0_Entry_ind' : M7T0_Entry_ind,
             'M7T0_Entry_ts' : M7T0_Entry_ts,
+            'M7T0_Exit_ind' : M7T0_Exit_ind,            
+            'M7T0_Exit_ts' : M7T0_Exit_ts,           
             'M7T1_Entry_ind' : M7T1_Entry_ind,
             'M7T1_Entry_ts' : M7T1_Entry_ts,
+            'M7T1_Exit_ind' : M7T1_Exit_ind,
+            'M7T1_Exit_ts'  : M7T1_Exit_ts,            
+            #'M7CT_Exit_ind' : M7CT_Exit_ind,
+            #'M7CT_Exit_ts' : M7CT_Exit_ts
            }
  
 def CinePlexCSV_parser(PathToFile):
@@ -236,13 +279,38 @@ def EventComparator(tlist1, tlist2, tol_window):
   tlist2_ind = np.arange(0, tlist2.size)
   tlist1_ind = np.arange(0, tlist1.size)
   
-  # Pre-allocate array dimensions for output array.
-  output = np.nan*np.ones(tlist1.size,1)
+  # Pre-allocate array dimensions for output. Note that the datatype is an
+  # array of dicts.
+  output = np.empty((tlist1.size,), dtype=dict)
   
   for i in tlist1_ind:
     
-    filt = (tlist2 >= tlist1[i] + tol_lo) and (tlist2 < tlist1[i] + tol_hi)
-    output[i] = np.array([tlist2[filt], tlist2_ind[filt]])
+    filt = (tlist2 >= tlist1[i] + tol_lo) & (tlist2 < tlist1[i] + tol_hi)
+    output[i]= {
+                'within_tol_ts' : tlist2[filt], 
+                'within_tol_ind' :tlist2_ind[filt]
+               }
    
   return output
+
+def RemoveEventsInTolWindowFiltGen(EventComparatorOutput):
+    
+    (nEvents,) = EventComparatorOutput.shape
+    KeepEvent = (np.ones((nEvents,), dtype=int) == 1)
+    
+    for i in np.arange(0, nEvents):
+        
+        KeepEvent[EventComparatorOutput[i]['within_tol_ind']] = False
   
+    return KeepEvent
+
+def KeepOnlyEventsInTolWindowFiltGen(EventComparatorOutput):
+    
+    (nEvents,) = EventComparatorOutput.shape
+    KeepEvent = (np.ones((nEvents,), dtype=int) == 0)
+    
+    for i in np.arange(0, nEvents):
+        
+        KeepEvent[EventComparatorOutput[i]['within_tol_ind']] = True
+  
+    return KeepEvent
