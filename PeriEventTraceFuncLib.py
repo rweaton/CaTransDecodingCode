@@ -339,7 +339,7 @@ def PLS_MonteCarlo(PeriEventExtractorDict, nLatents, nRepetitions, ConfLevel):
             }
     
 ##### SHUFFLE CONTROL
-# To test valitidity of decoding, shuffle event lables prior to running decoder
+# To test validity of decoding, shuffle event lables prior to running decoder
 def PLS_Shuffle(PeriEventExtractorDict, nLatents, nRepetitions, ConfLevel):
     
     # Calculate alphas and boundary indices from arguments
@@ -388,71 +388,85 @@ def PLS_Shuffle(PeriEventExtractorDict, nLatents, nRepetitions, ConfLevel):
 #TargetsVec = TargetsVec.transpose()[0]
 #np.random.shuffle(TargetsVec)
 #TargetsVec = np.array([TargetsVec]).transpose()
-    
-def ShelveWorkspace():
-    
-    ScriptDir = os.getcwd()
-    root = Tk()
-    root.filename =  filedialog.asksaveasfilename(
-                        initialdir = "/home/thugwithyoyo/Desktop",
-                        title = "Enter name of file to save", 
-                        filetypes = (("out files","*.out"), ("all files","*.*")))    
-    
-    if root.filename is None: # asksaveasfile return `None` if dialog closed with "cancel".
-        return
-    
-    LoadFilePath = root.filename
-    root.destroy()
-    (PathToFile, Filename) = os.path.split(LoadFilePath)
-    
-    os.chdir(PathToFile)
-     
-    my_shelf = shelve.open(Filename)    
-    #PathToSaveFile = root.filename
-    #my_shelf = shelve.open(PathToSaveFile, 'n') # 'n' for new
 
-    for key in dir():
-        
-        try:
-            
-            my_shelf[key] = globals()[key]
-            
-        except TypeError:
-            #
-            # __builtins__, my_shelf, and imported modules can not be shelved.
-            #
-            print('ERROR shelving: {0}'.format(key))
-            
-    #root.destroy()        
-    my_shelf.close()
-    
-    os.chdir(ScriptDir)
-    
-def RestoreShelvedWorkspace():
-    
-    ScriptDir = os.getcwd()
-    
-    root = Tk()
-    root.filename =  filedialog.askopenfilename(
-            initialdir = "/home/thugwithyoyo/Desktop",
-            title = "Select file to open",
-            filetypes = (("dat files","*.dat"),("all files","*.*")))
+#### The following function does not work as intended!!! ####
+# See: ShelveWorkspaceScript.py 
+#def ShelveWorkspace(SavePath):
+#    
+#    ScriptDir = os.getcwd()
+#    
+#    # Attempt to use GUI navigator dialog to guide save.  Drop for batch processing.
+##    root = Tk()
+##    root.filename =  filedialog.asksaveasfilename(
+##                        initialdir = "/home/thugwithyoyo/Desktop",
+##                        title = "Enter name of file to save", 
+##                        filetypes = (("out files","*.out"), ("all files","*.*")))    
+##    
+##    if root.filename is None: # asksaveasfile return `None` if dialog closed with "cancel".
+##        return
+##    
+##    LoadFilePath = root.filename
+##    root.destroy()
+#    
+#    # Use path from function argument to change to save directory and write file
+#    # with name contained in Filename.
+#    (PathToFile, Filename) = os.path.split(SavePath)
+#    
+#    os.chdir(PathToFile)
+#     
+#    # Open a shelf object to contain workspace variables.
+#    my_shelf = shelve.open(Filename)    
+#    #PathToSaveFile = root.filename
+#    #my_shelf = shelve.open(PathToSaveFile, 'n') # 'n' for new
+#
+#    # Iterate through list of global variables and write to file.
+#    for key in dir():
+#        
+#        try:
+#            
+#            my_shelf[key] = globals()[key]
+#            
+#        except TypeError:
+#            #
+#            # __builtins__, my_shelf, and imported modules can not be shelved.
+#            #
+#            print('ERROR shelving: {0}'.format(key))
+#            
+#    #root.destroy()
+#    
+#    # Close shelf object after variables have been written to file
+#    my_shelf.close()
+#    
+#    # Return to directory that contains this script.
+#    os.chdir(ScriptDir)
 
-    RestoreFilePath = root.filename
-    root.destroy()
-    (PathToFile, Filename) = os.path.split(RestoreFilePath)
-    
-    os.chdir(PathToFile)
-     
-    my_shelf = shelve.open(os.path.splitext(Filename)[0])
-    
-    for key in my_shelf:
-        
-        globals()[key]=my_shelf[key]
-        
-    my_shelf.close()
-    
-    os.chdir(ScriptDir)
+#### The following function does not work as intended!!! ####
+# See: RestoreShelvedWorkspaceScript.py
+#def RestoreShelvedWorkspace(RestoreFilePath):
+#    
+#    ScriptDir = os.getcwd()
+#    
+##    root = Tk()
+##    root.filename =  filedialog.askopenfilename(
+##            initialdir = "/home/thugwithyoyo/Desktop",
+##            title = "Select file to open",
+##            filetypes = (("dat files","*.dat"),("all files","*.*")))
+##
+##    RestoreFilePath = root.filename
+##    root.destroy()
+#    (PathToFile, Filename) = os.path.split(RestoreFilePath)
+#    
+#    os.chdir(PathToFile)
+#     
+#    my_shelf = shelve.open(os.path.splitext(Filename)[0])
+#    
+#    for key in my_shelf:
+#        
+#        globals()[key]=my_shelf[key]
+#        
+#    my_shelf.close()
+#    
+#    os.chdir(ScriptDir)
     
 def GenerateConfIntsPlot(ArrayOfConfIntsDicts, ArrayOfPerformanceDicts, PlotSpecDict, AxesHandle, Direction):
     
@@ -466,24 +480,40 @@ def GenerateConfIntsPlot(ArrayOfConfIntsDicts, ArrayOfPerformanceDicts, PlotSpec
     CI_Bars = np.empty((nDicts,2), dtype=float)
     CI_Bounds = np.empty((nDicts,2), dtype=float)
     Y_test = np.empty(ArrayOfConfIntsDicts.shape, dtype=float)
- 
+
+    # If "_median" substring is at the end of the measure name, remove it.
+    OrdinateName = PlotSpecDict['measure']
+    
+    if OrdinateName.endswith('_median'):
+        OrdinateName = OrdinateName[:-7]
+        TraceType = 'Shuffled outcomes'
+    else:
+        TraceType = 'Observed outcomes'
+        
     for i in np.arange(0, nDicts):
         
         if (Direction == 'bw'):
             
             X[i] = np.min(ArrayOfConfIntsDicts[i]['PeriEventDomain']) + 0.5*StepSize
-            TraceLabel = 'neg. cumulative span from '+ str(ArrayOfConfIntsDicts[i]['PeriEventDomain'][1]) +' sec.'
-            
+            TraceLabel = 'neg. cumulative span from '+ \
+                str(ArrayOfConfIntsDicts[i]['PeriEventDomain'][1]) +' sec.' \
+                + '('+ TraceType + ')'
+            TitleLabel = ' dependence on span of activity window'
+
         elif (Direction == 'fw'):
             
             X[i] = np.max(ArrayOfConfIntsDicts[i]['PeriEventDomain']) - 0.5*StepSize
-            TraceLabel = 'pos. cumulative span from '+ str(ArrayOfConfIntsDicts[i]['PeriEventDomain'][0]) +' sec.'
-            
+            TraceLabel = 'pos. cumulative span from '+ \
+                str(ArrayOfConfIntsDicts[i]['PeriEventDomain'][0]) +' sec.' \
+                + '('+ TraceType + ')'                
+            TitleLabel = ' dependence on span of activity window'
+
         elif (Direction == 'fw_sliding'):
             
             X[i] = np.mean(np.array(ArrayOfConfIntsDicts[i]['PeriEventDomain']))
             WindowWidth = np.diff(np.array(ArrayOfConfIntsDicts[0]['PeriEventDomain']))[0]
-            TraceLabel = 'Window of width '+str(WindowWidth)+' sec. slid over ' \
+            TraceLabel = TraceType
+            TitleLabel = ': window of width '+str(round(WindowWidth, 3))+' sec. slid over ' \
                             +str(round(StepSize, 3))+' sec. increments.'
             
 #        Y_median[i] = ArrayOfConfIntsDicts[i]['performance_median']
@@ -504,11 +534,13 @@ def GenerateConfIntsPlot(ArrayOfConfIntsDicts, ArrayOfPerformanceDicts, PlotSpec
     #fig = plt.figure()
     
     #AxesHandle.errorbar(X, Y_median, yerr=CI_Bars.transpose(), lolims=True, uplims=True, label=TraceLabel)
-    AxesHandle.fill_between(X, CI_Bounds.transpose()[0,:], CI_Bounds.transpose()[1,:], label=TraceLabel, alpha=0.7)
-    AxesHandle.plot(X, Y_test, '.-')
+    AxesHandle.fill_between(X, CI_Bounds.transpose()[0,:], CI_Bounds.transpose()[1,:], 
+                            label=TraceLabel, alpha=0.7, color=PlotSpecDict['color'])
+    AxesHandle.plot(X, Y_test, '.-', color=PlotSpecDict['color'])
     AxesHandle.set_xlabel('time relative to target entry (sec.)')
-    AxesHandle.set_ylabel(PlotSpecDict['measure'])
-    AxesHandle.set_title(PlotSpecDict['measure'] + ' dependence on span of activity window')
+            
+    AxesHandle.set_ylabel(OrdinateName)
+    AxesHandle.set_title(OrdinateName + TitleLabel)
     
     plt.legend(loc='lower right')
 

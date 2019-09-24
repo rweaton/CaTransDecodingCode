@@ -34,34 +34,67 @@ def CinePlexFromMatJSON_parser(PathToBehavFile):
     # refer to when the relevant marker is present or absent respectively within
     # the relevant target. Finally, "CumLen" stands for cumulative length in the
     # present target.
+#    ColumnNames = {	
+#                   'Timestamp':'Timestamp',
+#                   'FrameNumber':'Frame_Number', 
+#                   'M6_xCoord':'X1_1_pix',
+#                   'M6_yCoord':'Y1_1_pix',
+#                   'M7_xCoord':'X2_1_pix',	
+#                   'M7_yCoord':'Y2_1_pix',
+#                   'M6T0_in':'EV1_1',
+#                   'M6T0_in_CumLen':'EV1_1_Track_Length_pix',
+#                   'M6T0_out':'EV1_2',
+#                   'M6T0_out_CumLen':'EV1_2_Track_Length_pix',
+#                   'M6T1_in':'EV1_3',
+#                   'M6T1_in_CumLen':'EV1_3_Track_Length_pix',
+#                   'M6T1_out':'EV1_4',
+#                   'M6T1_out_CumLen':'EV1_4_Track_Length_pix',
+#                   'M6CT_in':'EV1_5',
+#                   'M6CT_in_CumLen':'EV1_5_Track_Length_pix',
+#                   'M6CT_out':'EV1_6',
+#                   'M6CT_out_CumLen':'EV1_6_Track_Length_pix',
+#                   'M7T0_in':'EV1_7',
+#                   'M7T0_in_CumLen':'EV1_7_Track_Length_pix',
+#                   'M7T0_out':'EV1_8',
+#                   'M7T0_out_CumLen':'EV1_8_Track_Length_pix',
+#                   'M7T1_in':'EV1_9',
+#                   'M7T1_in_CumLen':'EV1_9_Track_Length_pix',
+#                   'M7T1_out':'EV1_10',
+#                   'M7T1_out_CumLen':'EV1_10_Track_Length_pix',
+#                   'M7CT_in':'EV1_11',
+#                   'M7CT_in_CumLen':'EV1_11_Track_Length_pix',
+#                   'M7CT_out':'EV1_12',
+#                   'M7CT_out_CumLen':'EV1_12_Track_Length_pix'
+#                   }
+    # Samantha's New Column name style
     ColumnNames = {	
                    'Timestamp':'Timestamp',
-                   'FrameNumber':'Frame_Number', 
-                   'M6_xCoord':'X1_1_pix',
-                   'M6_yCoord':'Y1_1_pix',
-                   'M7_xCoord':'X2_1_pix',	
-                   'M7_yCoord':'Y2_1_pix',
-                   'M6T0_in':'EV1_1',
+                   'FrameNumber':'Frame_number', 
+                   'M6_xCoord':'RH_x_pos',
+                   'M6_yCoord':'RH_y_pos',
+                   'M7_xCoord':'LH_x_pos',	
+                   'M7_yCoord':'LH_y_pos',
+                   'M6T0_in':'RH_zone1',
                    'M6T0_in_CumLen':'EV1_1_Track_Length_pix',
                    'M6T0_out':'EV1_2',
                    'M6T0_out_CumLen':'EV1_2_Track_Length_pix',
-                   'M6T1_in':'EV1_3',
+                   'M6T1_in':'RH_zone2',
                    'M6T1_in_CumLen':'EV1_3_Track_Length_pix',
                    'M6T1_out':'EV1_4',
                    'M6T1_out_CumLen':'EV1_4_Track_Length_pix',
-                   'M6CT_in':'EV1_5',
+                   'M6CT_in':'RH_homezone',
                    'M6CT_in_CumLen':'EV1_5_Track_Length_pix',
                    'M6CT_out':'EV1_6',
                    'M6CT_out_CumLen':'EV1_6_Track_Length_pix',
-                   'M7T0_in':'EV1_7',
+                   'M7T0_in':'LH_zone1',
                    'M7T0_in_CumLen':'EV1_7_Track_Length_pix',
                    'M7T0_out':'EV1_8',
                    'M7T0_out_CumLen':'EV1_8_Track_Length_pix',
-                   'M7T1_in':'EV1_9',
+                   'M7T1_in':'LH_zone2',
                    'M7T1_in_CumLen':'EV1_9_Track_Length_pix',
                    'M7T1_out':'EV1_10',
                    'M7T1_out_CumLen':'EV1_10_Track_Length_pix',
-                   'M7CT_in':'EV1_11',
+                   'M7CT_in':'LH_homezone',
                    'M7CT_in_CumLen':'EV1_11_Track_Length_pix',
                    'M7CT_out':'EV1_12',
                    'M7CT_out_CumLen':'EV1_12_Track_Length_pix'
@@ -154,7 +187,18 @@ def CinePlexCSV_parser(PathToFile):
   # the routine can navigate back after changing directories if need be.  
   ScriptDir = os.getcwd()
   #PathToFile = ''
+  
   BehaviorTraces_Frame = pd.read_csv(PathToFile, header=0)
+  
+#  try:
+#      
+#      BehaviorTraces_Frame = pd.read_csv(PathToFile, header=0)
+#      
+#  except:
+#      
+#      print('File: ' + PathToFile + 'generated a pd.read_csv error...\n')
+#      
+#  return BehaviorTraces_Frame
 
   # Generate an index list for later referencing
   Indices = np.arange(0, BehaviorTraces_Frame['#'].size)
@@ -205,8 +249,14 @@ def CinePlexCSV_parser(PathToFile):
                     1.1*(BehaviorTraces_Frame[ColumnNames['Timestamp']].values[-1] -
                      BehaviorTraces_Frame[ColumnNames['Timestamp']].values[-2])))
   
-  StartIndex = Indices[Filt]
-  
+  if np.sum(Filt) > 0:
+      
+      StartIndex = Indices[Filt][0]
+      
+  elif np.sum(Filt) == 0:
+      
+      StartIndex = 0
+      
   # Subtract out pre-pause delay on startup
   BehaviorTraces_Frame[ColumnNames['Timestamp']] = \
       BehaviorTraces_Frame[ColumnNames['Timestamp']].values - \
@@ -219,16 +269,34 @@ def CinePlexCSV_parser(PathToFile):
   # Generate a list of indices for the resulting filtered table.
   Indices = np.arange(0, BehaviorTraces_Frame['#'].size)
   
+  # Reset indices of dataframe
+  BehaviorTraces_Frame.index = Indices
+                                  
   # Extract Marker 6 T0 entry events
   Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6T0_in']])== 1))
   M6T0_Entry_ind = Indices[Filt]
   M6T0_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6T0_Entry_ind]
 
+  # Extract Marker 6 T0 exit events
+  Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6T0_out']])== 1))
+  M6T0_Exit_ind = Indices[Filt]
+  M6T0_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6T0_Exit_ind]
+  
   # Extract Marker 6 T1 entry events
   Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6T1_in']])== 1))
   M6T1_Entry_ind = Indices[Filt]
   M6T1_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6T1_Entry_ind]
+  
+  # Extract Marker 6 T1 exit events
+  Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6T1_out']])== 1))
+  M6T1_Exit_ind = Indices[Filt]
+  M6T1_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6T1_Exit_ind]  
 
+  # Extract Marker 6 CT entry events
+  Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6CT_in']])== 1))
+  M6CT_Entry_ind = Indices[Filt]
+  M6CT_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M6CT_Entry_ind]
+  
   # Extract Marker 6 CT exit events
   Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M6CT_out']])== 1))
   M6CT_Exit_ind = Indices[Filt]
@@ -239,27 +307,65 @@ def CinePlexCSV_parser(PathToFile):
   M7T0_Entry_ind = Indices[Filt]
   M7T0_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7T0_Entry_ind]
 
+  # Extract Marker 7 T0 exit events
+  Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7T0_out']])== 1))
+  M7T0_Exit_ind = Indices[Filt]
+  M7T0_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7T0_Exit_ind]
+  
   # Extract Marker 7 T1 entry events
   Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7T1_in']])== 1))
   M7T1_Entry_ind = Indices[Filt]
   M7T1_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7T1_Entry_ind]
 
+  # Extract Marker 7 T1 exit events
+  Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7T1_out']])== 1))
+  M7T1_Exit_ind = Indices[Filt]
+  M7T1_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7T1_Exit_ind]
+ 
+  # Extract Marker 7 CT entry events
+  Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7CT_in']])== 1))
+  M7CT_Entry_ind = Indices[Filt]
+  M7CT_Entry_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7CT_Entry_ind]
+  
   # Extract Marker 7 CT exit events
   Filt = np.hstack((False, np.diff(BehaviorTraces_Frame[ColumnNames['M7CT_out']])== 1))
   M7CT_Exit_ind = Indices[Filt]
   M7CT_Exit_ts = BehaviorTraces_Frame[ColumnNames['Timestamp']][M7CT_Exit_ind]
   
-  return {
+  return {# Right hand enters right target
           'M6T0_Entry_ind' : M6T0_Entry_ind,
           'M6T0_Entry_ts': M6T0_Entry_ts,
+          # Right hand exits right target
+          'M6T0_Exit_ind' : M6T0_Exit_ind,
+          'M6T0_Exit_ts': M6T0_Exit_ts,          
+          # Right hand enters left target
           'M6T1_Entry_ind' : M6T1_Entry_ind,
           'M6T1_Entry_ts' : M6T1_Entry_ts,
+          # Right hand exits left target
+          'M6T1_Exit_ind' : M6T1_Exit_ind,
+          'M6T1_Exit_ts' : M6T1_Exit_ts,
+          # Right hand enters center target
+          'M6CT_Entry_ind' : M6CT_Entry_ind,
+          'M6CT_Entry_ts' : M6CT_Entry_ts,
+          # Right hand exits center target
           'M6CT_Exit_ind' : M6CT_Exit_ind,
           'M6CT_Exit_ts' : M6CT_Exit_ts,
+          # Left hand enters right target
           'M7T0_Entry_ind' : M7T0_Entry_ind,
           'M7T0_Entry_ts' : M7T0_Entry_ts,
+          # Left hand exits right target
+          'M7T0_Exit_ind' : M7T0_Exit_ind,
+          'M7T0_Exit_ts' : M7T0_Exit_ts,
+          # Left hand enters left target
           'M7T1_Entry_ind' : M7T1_Entry_ind,
           'M7T1_Entry_ts' : M7T1_Entry_ts,
+          # Left hand exits left target
+          'M7T1_Exit_ind' : M7T1_Exit_ind,
+          'M7T1_Exit_ts' : M7T1_Exit_ts,
+          # Left hand enters center target
+          'M7CT_Entry_ind' : M7CT_Entry_ind,
+          'M7CT_Entry_ts' : M7CT_Entry_ts,          
+          # Left hand exits center target
           'M7CT_Exit_ind' : M7CT_Exit_ind,
           'M7CT_Exit_ts' : M7CT_Exit_ts
          }
