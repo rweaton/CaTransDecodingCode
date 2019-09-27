@@ -10,20 +10,21 @@ from PeriEventTraceFuncLib import *
 from collections import defaultdict
 
 # Paths to data in JSON formatted files
-#PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10/2018-12-10-11-37-56_new_unique_B.json'
-#PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10/2018-12-10-11-37-56_new_unique_C.json'
+PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10/2018-12-10-11-37-56_new_unique_B.json'
+PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10/2018-12-10-11-37-56_new_unique_C.json'
 
-PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-27/2018-12-27-11-35-22_new_unique_B.json'
-PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-27/2018-12-27-11-35-22_new_unique_C.json'
+#PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-27/2018-12-27-11-35-22_new_unique_B.json'
+#PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-27/2018-12-27-11-35-22_new_unique_C.json'
 
-SavePath = '/home/thugwithyoyo/CaTransDecoding/Output/2018-12-27_new_unique_SW_LandRHem'
+SavePath = '/home/thugwithyoyo/CaTransDecoding/Output/2018-12-10-11-37-56_unique_400ms_SlidingWindow-filtered'
 
 # Define ParamsDict, the dictionary that contains the parameters for
 # PLS decoding, Bootstrapping, Shuffle control processes.
 # Peripheral target entry events
 
 ParamsDict = defaultdict(dict)
-ParamsDict['RefEventsList'] = ['M6T0_Entry_ts', 'M7T1_Entry_ts']
+#ParamsDict['RefEventsList'] = ['M6T0_Entry_ts', 'M7T1_Entry_ts']
+ParamsDict['RefEventsList'] = ['M6T0_Entry_ts', 'M6T1_Entry_ts']
 
 # Scalar values assigned to event types listed above.
 ParamsDict['AssignedEventVals'] = [-1, 1]
@@ -74,7 +75,7 @@ def SlidingWindowAnalysisFunc(PathToBehavFile, CellFluorTraces_Frame, SavePath, 
     # Generate the unfiltered behavior dictionary.
     BehavDict = BehavDictGen(PathToBehavFile)
     
-    # Detect rapid repeats within each event list.
+#    # Detect rapid repeats within each event list.
     EventFilters = RemoveRepeatTargetEntries(BehavDict, 
                                              RefEventsDict['RefEventsList'], 
                                              ParamsDict['RelativeTolWindow'])
@@ -143,8 +144,8 @@ def SlidingWindowAnalysisFunc(PathToBehavFile, CellFluorTraces_Frame, SavePath, 
     
     
 
-#SlidingWindowAnalysisFunc(PathToBehavFile, PathToFluorFile, SavePath, ParamsDict)
-SlidingWindowAnalysisFunc(PathToBehavFile, FluorDataframe_Combined, SavePath, ParamsDict)
+SlidingWindowAnalysisFunc(PathToBehavFile, PathToFluorFile, SavePath, ParamsDict)
+#SlidingWindowAnalysisFunc(PathToBehavFile, FluorDataframe_Combined, SavePath, ParamsDict)
 
 RestoreFilePath = SavePath+'.dat'
 exec(open('./RestoreShelvedWorkspaceScript.py').read())
