@@ -10,8 +10,10 @@ import numpy as np
 from PeriEventTraceFuncLib import *
 
 # Paths to data in JSON formatted files
-PathToBehavFile = '/home/thugwithyoyo/Desktop/MAE298_Project/CalciumImagingData/2018-12-10-11-37-56_B.json'
-PathToFluorFile = '/home/thugwithyoyo/Desktop/MAE298_Project/CalciumImagingData/2018-12-10-11-37-56_C.json'
+#PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10-11-37-56_B.json'
+#PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-10-11-37-56_C.json'
+PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-14-11-01-41_B.json'
+PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2018-12-14-11-01-41_C.json'
 
 # Peripheral target entry events
 RefEventsList = ['M6T0_Entry_ts', 'M6T1_Entry_ts']
@@ -38,6 +40,7 @@ BoundaryWindow = [-1., 2.]
 StepWidth = 0.1
 WindowWidth = 0.4
 
+
 #ForwardArray = np.round(np.arange(BoundaryWindow[0] + StepWidth, 
 #                                  BoundaryWindow[1] + 0.5*StepWidth, 
 #                                  StepWidth)/StepWidth)*StepWidth
@@ -55,25 +58,39 @@ ArrayOfWindows_fw = CumulativeWindowGen(BoundaryWindow, StepWidth, 'positive')
 ArrayOfWindows_bw = CumulativeWindowGen(BoundaryWindow, StepWidth, 'negative')
 
 # Set parameters for PLS
-nLatents = 5
+NumLatents = 5
 
 # Set parameters for Monte Carlo estimation of  confidence intervals
-nRepetitions = 30
+NumRepetitions = 30
 ConfLevel = 0.95
 
+# Specified anti-tolerance window, relative to target entry, for detecting and
+# removing repeat entries that followed shortly after the initial entry.
+RelativeTolWindow = (0.0001, 2.5)
+
+# Generate the unfiltered behavior dictionary.
 BehavDict = BehavDictGen(PathToBehavFile)
+
+# Detect rapid repeats within each event list.
+EventFilters = RemoveRepeatTargetEntries(BehavDict, RefEventsList, 
+                                         RelativeTolWindow)
+
+# Remove repeat events
+for ef in EventFilters:
+    
+    BehavDict[ef] = BehavDict[ef][EventFilters[ef]]
 
 CellFluorTraces_Frame = CellFluorTraces_FrameGen(PathToFluorFile)
 
 # Grow window forwards from floor
-(nDomains_fw, _) = ArrayOfWindows_fw.shape
+(NumDomains_fw, _) = ArrayOfWindows_fw.shape
 
 # Initialize an empty array to contain output dictionaries from the 
 # decoder cross-validation perfomance and monte carlo bootstrap routines
-Performance_fw = np.empty((nDomains_fw,), dtype=dict)
-ConfInts_fw = np.empty((nDomains_fw), dtype=dict)
+Performance_fw = np.empty((NumDomains_fw,), dtype=dict)
+ConfInts_fw = np.empty((NumDomains_fw), dtype=dict)
 
-for i in np.arange(0, nDomains_fw):
+for i in np.arange(0, NumDomains_fw):
  
     PeriEventExtractorDict = PeriEventExtractor_Trace(BehavDict, 
                                     CellFluorTraces_Frame, RefEventsDict, 
@@ -81,26 +98,26 @@ for i in np.arange(0, nDomains_fw):
     
     # Generate a set of indices to test the inclusion portion of the performance code.
     PEA_Array = PeriEventExtractorDict['PEA_Array']
-    (nTotalTrials, nTotalFeatures) = PEA_Array.shape
-    InclusionSet = np.random.randint(0, high=nTotalTrials, size=(nTotalTrials,))
+    (NumTotalTrials, NumTotalFeatures) = PEA_Array.shape
+    InclusionSet = np.random.randint(0, high=NumTotalTrials, size=(NumTotalTrials,))
 
-    Performance_fw[i] = PLS_DecoderPerformance(PeriEventExtractorDict, nLatents)
+    Performance_fw[i] = PLS_DecoderPerformance(PeriEventExtractorDict, NumLatents)
     Performance_fw[i].update({'PeriEventDomain': ArrayOfWindows_fw[i]})
 
     ConfInts_fw[i] = PLS_MonteCarlo(PeriEventExtractorDict,
-                                               nLatents, nRepetitions, 
+                                               NumLatents, NumRepetitions, 
                                                ConfLevel)
     ConfInts_fw[i].update({'PeriEventDomain': ArrayOfWindows_fw[i]})
     
 # Grow window backwards from ceiling
-(nDomains_bw, _) = ArrayOfWindows_bw.shape
+(NumDomains_bw, _) = ArrayOfWindows_bw.shape
 
 # Initialize an empty array to contain output dictionaries from the 
 # decoder cross-validation routine.
-Performance_bw = np.empty((nDomains_bw,), dtype=dict)
-ConfInts_bw = np.empty((nDomains_bw), dtype=dict)
+Performance_bw = np.empty((NumDomains_bw,), dtype=dict)
+ConfInts_bw = np.empty((NumDomains_bw), dtype=dict)
 
-for i in np.arange(0, nDomains_bw):
+for i in np.arange(0, NumDomains_bw):
  
     PeriEventExtractorDict = PeriEventExtractor_Trace(BehavDict, 
                                     CellFluorTraces_Frame, RefEventsDict, 
@@ -110,14 +127,14 @@ for i in np.arange(0, nDomains_bw):
 
     # Generate a set of indices to test the inclusion portion of the performance code.
     PEA_Array = PeriEventExtractorDict['PEA_Array']
-    (nTotalTrials, nTotalFeatures) = PEA_Array.shape
-    InclusionSet = np.random.randint(0, high=nTotalTrials, size=(nTotalTrials,))
+    (NumTotalTrials, NumTotalFeatures) = PEA_Array.shape
+    InclusionSet = np.random.randint(0, high=NumTotalTrials, size=(NumTotalTrials,))
 
-    Performance_bw[i] = PLS_DecoderPerformance(PeriEventExtractorDict, nLatents)
+    Performance_bw[i] = PLS_DecoderPerformance(PeriEventExtractorDict, NumLatents)
     Performance_bw[i].update({'PeriEventDomain': ArrayOfWindows_bw[i]})
 
     ConfInts_bw[i] = PLS_MonteCarlo(PeriEventExtractorDict,
-                                               nLatents, nRepetitions, 
+                                               NumLatents, NumRepetitions, 
                                                ConfLevel)
     ConfInts_bw[i].update({'PeriEventDomain': ArrayOfWindows_bw[i]}) 
     
