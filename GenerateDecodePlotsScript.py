@@ -32,8 +32,8 @@ fig1.suptitle(FigureTitle)
 # Plot performance and performance control plots
 PlotSpecDict = {'measure': 'performance',
                 'measure_median': 'performance_median',
-                'measure_CLs': 'performance_CLs',
-                'measure_SE': 'performance_SE',
+#                'measure_bars': 'performance_CLs',
+                'measure_bars': 'performance_SE_bounds',
                 'color':'blue'}
  
 GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict, 
@@ -41,8 +41,8 @@ GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict,
  
 PlotSpecDict = {'measure': 'performance_median',
                 'measure_median': 'performance_median',
-                'measure_CLs': 'performance_CLs',
-                'measure_SE': 'performance_SE',
+#                'measure_bars': 'performance_CLs',
+                'measure_bars': 'performance_SE_bounds',
                 'color':'lightblue'}
  
 GenerateConfIntsPlot(EventsShuffled, EventsShuffled, PlotSpecDict, 
@@ -65,8 +65,8 @@ fig2.suptitle(FigureTitle)
  
 PlotSpecDict = {'measure': 'mutual_info',
                 'measure_median': 'mutual_info_median',
-                'measure_CLs': 'mutual_info_CLs',
-                'measure_SE': 'mutual_info_SE',
+ #               'measure_bars': 'mutual_info_CLs',
+                'measure_bars': 'mutual_info_SE_bounds',
                 'color':'blue'}
  
 GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict, 
@@ -74,8 +74,8 @@ GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict,
  
 PlotSpecDict = {'measure': 'mutual_info_median',
                 'measure_median': 'mutual_info_median',
-                'measure_CLs': 'mutual_info_CLs',
-                'measure_SE': 'mutual_info_SE',
+#                'measure_bars': 'mutual_info_CLs',
+                'measure_bars': 'mutual_info_SE_bounds',
                 'color':'lightblue'}
  
 GenerateConfIntsPlot(EventsShuffled, EventsShuffled, PlotSpecDict, 

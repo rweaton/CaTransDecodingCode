@@ -76,6 +76,7 @@ RefEventsDict = {'RefEventsList' : ParamsDict['RefEventsList'],
 NumCells = CellFluorTraces_Frame.shape[1] - 1
 
 DrawCounts = np.arange(5, (NumCells + 1), 5)
+DrawCounts = np.hstack([np.array([1, 2, 3, 4]), DrawCounts])
 
 (NumSamplingDicts,) = DrawCounts.shape
 SamplingDicts = np.empty((NumSamplingDicts,), dtype=dict)

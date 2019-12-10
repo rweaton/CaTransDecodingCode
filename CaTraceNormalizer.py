@@ -87,22 +87,47 @@ def CaTraceSorter(MatrixOfTraces, ParamsDict, SortMethod):
                                     NumTraces).transpose()
     if SortMethod == 'PeakSort':
         
-        # Locate maxima within search domain and computer their values.    
+        # Locate trace maxima within search domain and computer their values.    
         ProcessingDict['MaxLocs'] = np.array([np.argmax(MatrixOfTraces[:, SearchDomainFilt], 
                                              axis=1)]).transpose()
     
+        ValExtractionFilt = (SearchDomainIndices == ProcessingDict['MaxLocs']) 
+    
+        ProcessingDict['MaxVals'] = MatrixOfTraces[ValExtractionFilt]
+        
+        ProcessingDict['SortIndices'] = np.argsort(ProcessingDict['MaxVals'], axis=-1)
+    
     elif SortMethod == 'AbsPeakSort':
         
-        # Locate maxima within search domain and computer their values.    
+        # Locate maxima of absolute valued traces within search domain and computer their values.    
         ProcessingDict['MaxLocs'] = np.array([np.argmax(np.abs(MatrixOfTraces[:, SearchDomainFilt]), 
-                                             axis=1)]).transpose()        
+                                             axis=1)]).transpose()
+        ValExtractionFilt = (SearchDomainIndices == ProcessingDict['MaxLocs']) 
     
-    ValExtractionFilt = (SearchDomainIndices == ProcessingDict['MaxLocs']) 
+        ProcessingDict['MaxVals'] = MatrixOfTraces[ValExtractionFilt]
+        
+        ProcessingDict['SortIndices'] = np.argsort(ProcessingDict['MaxVals'], axis=-1)
     
-    ProcessingDict['MaxVals'] = MatrixOfTraces[ValExtractionFilt]
+    elif SortMethod =='AreaSort':
+
+        ProcessingDict['AreaVals'] = np.array([np.sum(MatrixOfTraces[:, SearchDomainFilt],
+                                              axis=1)]).transpose()
+        
+        ProcessingDict['SortIndices'] = np.argsort(ProcessingDict['AreaVals'], axis=0).transpose()[0]
+        
+    elif SortMethod == 'AvgSort':
+        
+        ProcessingDict['AvgVals'] = np.array([np.mean(MatrixOfTraces[:, SearchDomainFilt],
+                                              axis=-1)]).transpose()
+    
+        ProcessingDict['SortIndices'] = np.argsort(ProcessingDict['AvgVals'], axis=0).transpose()[0]
+ 
+#    ValExtractionFilt = (SearchDomainIndices == ProcessingDict['MaxLocs']) 
+    
+#    ProcessingDict['MaxVals'] = MatrixOfTraces[ValExtractionFilt]
     
     # Generate a sorting map to organize row traces.
-    ProcessingDict['SortIndices'] = np.argsort(ProcessingDict['MaxVals'], axis=-1)
+#    ProcessingDict['SortIndices'] = np.argsort(ProcessingDict['MaxVals'], axis=-1)
     
     # Sort traces       
     #OutputTraceMatrix = MatrixOfTraces[ProcessingDict['SortIndices'], :]
@@ -110,6 +135,107 @@ def CaTraceSorter(MatrixOfTraces, ParamsDict, SortMethod):
         
     #return OutputTraceMatrix, ProcessingDict
     return ProcessingDict
+
+def GetMax(Array):
+    
+    if len(Array.shape) > 1:
+        
+        return GetMax(np.amax(Array, axis=-1))
+
+    else:
+        
+        return np.amax(Array)
+
+def GetMean(Array):
+
+    if len(Array.shape) > 1:
+        
+        return GetMean(np.mean(Array, axis=-1))
+
+    else:
+        
+        return np.mean(Array)
+    
+def GetTuning(ArrayOfMatrices, TuningMethod, **kwargs):
+    
+    DifferenceMatrix = np.diff(ArrayOfMatrices, axis=-1)
+
+    if TuningMethod == 'MaxAbsDiffMatrixNorm':
+        
+        NormVal = GetMax(np.abs(DifferenceMatrix))
+        
+        TuningIndexArray = DifferenceMatrix/NormVal
+        
+    if TuningMethod == 'DiffOverSum':
+#    NormVal = GetMean(np.abs(DifferenceMatrix))
+        
+        TraceAvgs = np.mean(ArrayOfMatrices, axis=1)
+        
+        NormVal = np.sum(np.abs(TraceAvgs), axis=-1)
+        
+        TuningIndexArray = np.divide(TraceAvgs[:,1] - TraceAvgs[:,0],
+                                     NormVal)
+        
+    if TuningMethod == 'DiffOfAvgsOverSumOfMagOfAvgs':
+        
+        # Begin calculation of scalar tuning indices for z-score averaged traces from 
+        # each cell
+        (NumTraces, NumSamples) = ArrayOfMatrices[:,:,0].shape
+        
+        RelTimeVec = np.linspace(kwargs['ParamsDict']['BoundaryWindow'][0], 
+                                 kwargs['ParamsDict']['BoundaryWindow'][1], 
+                                 num=NumSamples, endpoint=False)
+        
+        SearchDomainFilt = (RelTimeVec >= kwargs['ParamsDict']['SearchDomain'][0]) & \
+                           (RelTimeVec <= kwargs['ParamsDict']['SearchDomain'][1])
+                           
+        TraceAvgs = np.mean(ArrayOfMatrices[:, SearchDomainFilt, :], axis=1)
+        
+        NormVal = np.sum(np.abs(TraceAvgs), axis=-1)
+        
+        TuningIndexArray = np.divide(TraceAvgs[:,1] - TraceAvgs[:,0],
+                                     NormVal)
+        
+    if TuningMethod == 'WeightedDifference':
+        
+        # Begin calculation of scalar tuning indices for z-score averaged traces from 
+        # each cell
+        (NumTraces, NumSamples) = ArrayOfMatrices[:,:,0].shape
+        
+        RelTimeVec = np.linspace(kwargs['ParamsDict']['BoundaryWindow'][0], 
+                                 kwargs['ParamsDict']['BoundaryWindow'][1], 
+                                 num=NumSamples, endpoint=False)
+        
+        SearchDomainFilt = (RelTimeVec >= kwargs['ParamsDict']['SearchDomain'][0]) & \
+                           (RelTimeVec <= kwargs['ParamsDict']['SearchDomain'][1])
+                           
+        TraceAvgs = np.mean(ArrayOfMatrices[:, SearchDomainFilt, :], axis=1)
+        
+        #mu = GetMean(ArrayOfMatrices)*np.ones(TraceAvgs.shape[0])
+        
+        Weights = np.exp(-(1./2.)*((np.sum(TraceAvgs, axis=-1))/kwargs['ParamsDict']['StdDev'])**2)
+        
+        TuningIndexArray = np.multiply((TraceAvgs[:,1] - TraceAvgs[:,0]), Weights)
+        
+    if TuningMethod == 'PlainDifference':
+        
+        # Begin calculation of scalar tuning indices for z-score averaged traces from 
+        # each cell
+        (NumTraces, NumSamples) = ArrayOfMatrices[:,:,0].shape
+        
+        RelTimeVec = np.linspace(kwargs['ParamsDict']['BoundaryWindow'][0], 
+                                 kwargs['ParamsDict']['BoundaryWindow'][1], 
+                                 num=NumSamples, endpoint=False)
+        
+        SearchDomainFilt = (RelTimeVec >= kwargs['ParamsDict']['SearchDomain'][0]) & \
+                           (RelTimeVec <= kwargs['ParamsDict']['SearchDomain'][1])
+                           
+        TraceAvgs = np.mean(ArrayOfMatrices[:, SearchDomainFilt, :], axis=1)
+        
+        TuningIndexArray = (TraceAvgs[:,1] - TraceAvgs[:,0])
+        
+    return TuningIndexArray
+
 
 def PeakNormalizer(MatrixOfTraces):
             
@@ -119,3 +245,43 @@ def PeakNormalizer(MatrixOfTraces):
     NormVecs = np.dot(np.array([TraceAbsValMaxima]).transpose(), np.array([np.ones((NumSamples,))]))
     
     return np.divide(MatrixOfTraces, NormVecs) 
+
+def TuningByCellFrameGen(CellFluorTraces_Frame, SortProcessingDict, ParamsDict):
+    
+    # Write into dataframe: cell identities, tuning values and indicies 
+    # of traces as they are tuning ordered in the heatmaps.
+    
+    # Count the total number of columns in the fluorescence trace dataframe
+    (_, NumColumns) = CellFluorTraces_Frame.shape
+
+    # Number of cells included is one less than the total number of columns.  
+    # The first column contains timestamps.
+    NumCells = NumColumns - 1
+    
+    # Extract the cell names from the column header.
+    CellLabels = np.array(list(CellFluorTraces_Frame.columns.values))[1:]
+    
+    # Initialize tuning dataframe.
+    Tuning_Frame = pd.DataFrame(index=CellLabels, 
+                                columns=['ScalarTuningIndex', 'HeatMapRowIndex'])
+    
+    # Write tuning indices to the tuning dataframe.
+    Tuning_Frame['ScalarTuningIndex'] = SortProcessingDict['AvgVals'].transpose()[0]
+    
+    # Perform reverse mapping operation to indicate each the row index of the 
+    # associated trace in the tuning-sorted heat map.
+    
+    # Generate a list of indices for the cells
+    IndexList = np.arange(0,NumCells)
+    
+    # Iterate through the list of indices and detect location of same index in
+    # the list of indices sorted by corresponding tuning index value.
+    for i in IndexList:
+        
+        # Find location of trace index in the sorted list.
+        Filt = (SortProcessingDict['SortIndices'] == i) 
+        
+        # Write CellLabel and index location to the tuning dataframe.
+        Tuning_Frame.at[CellLabels[i], 'HeatMapRowIndex'] = IndexList[Filt][0]
+    
+    return Tuning_Frame

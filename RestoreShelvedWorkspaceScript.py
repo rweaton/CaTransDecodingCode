@@ -32,6 +32,7 @@ my_shelf = shelve.open(os.path.splitext(Filename)[0])
 for key in my_shelf:
     
     globals()[key]=my_shelf[key]
+    #locals()[key]=my_shelf[key]
 
 # Close the shelve object
 my_shelf.close()
