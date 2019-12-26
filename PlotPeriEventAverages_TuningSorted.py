@@ -43,7 +43,7 @@ except:
     
 ### Specify a dictionary of parameters for tuning calcluation and plotting.
 # Time domain to consider for calculation of tuning index
-ParamsDict['SearchDomain'] = [0., 1.]
+ParamsDict['SearchDomain'] = [-1., 1.]
 
 # Specify the method to be used to calculate tuning method. 
 #ParamsDict['TuningType'] = 'PlainDifference'
@@ -84,7 +84,7 @@ ColorMap = 'seismic'
 
 # 2018-12-18-11-20-21 cells to select
 #CellsToSelectList = ['C031', 'C085', 'C025', 'C081', 'C099', 'C101']
-CellsToSelectList = ['C085', 'C025', 'C081']
+#CellsToSelectList = ['C085', 'C025', 'C031']
 
 CellsToSelectList = []
 
@@ -239,7 +239,9 @@ Tuning_Frame = TuningByCellFrameGen(CellFluorTraces_Frame, SortProcessingDict,
                                     ParamsDict)
 
 # Save tuning dataframe into Excel file.
-Tuning_Frame.to_excel(Path+os.sep+File[0:19]+'_TIsByCell_'+ParamsDict['TuningType']+'.xlsx')
+Tuning_Frame.to_excel(Path+os.sep+File[0:19]+'_TIsByCell_' + 
+                      str(ParamsDict['SearchDomain']) + '_' +
+                      ParamsDict['TuningType']+'.xlsx')
 
 ##### BEGIN COLORMAPS PLOTTING
 
@@ -291,7 +293,7 @@ for RefEvent in RefEventsList:
     elif(RefEvent == 'M7T0_Entry_ts'):
         SubPlotTitle = 'LH_Zone1'
     elif(RefEvent == 'M7T1_Entry_ts'):
-        SubPlotTitle == 'LH_Zone2'
+        SubPlotTitle = 'LH_Zone2'
         
     axes[i].title.set_text(SubPlotTitle)
     
@@ -323,11 +325,13 @@ cb.set_ticklabels(Ticks)
 cb.set_label('average z-score')
 
 # Define figure name
-FigureTitle = File[0:19] + ' trial-averaged z-scores of $\Delta$F $Ca^{2+}$ response'
+FigureTitle = File[0:19] + ' trial-averaged z-scores of $\Delta$F $Ca^{2+}$ response\n' + 'tuning time domain = ' + str(ParamsDict['SearchDomain']) + '\n'
 fig.suptitle(FigureTitle)
+fig.set_size_inches(11., 8.5)
 
 # Save figure
 fig.savefig(Path+os.sep+File[0:19] + '_TraceHeatMapsByZone_' + 
+            str(ParamsDict['SearchDomain']) + '_' +
             ParamsDict['TuningType'] + '.svg')
 
 #  Generate difference plot. 
@@ -434,7 +438,8 @@ Proportions[1] = 1. - (Proportions[0] + Proportions[2])
 
 # Generate the corresponding label for each entry in the list of proportions
 Labels = ['TI $\leq$ '+str(-1.*ParamsDict['TuningCutoffLevel']),
-          str(-1.*ParamsDict['TuningCutoffLevel'])+' < TI < '+ str(ParamsDict['TuningCutoffLevel']),
+#          str(-1.*ParamsDict['TuningCutoffLevel'])+' < TI < '+ str(ParamsDict['TuningCutoffLevel']),
+          'TI < |' + str(ParamsDict['TuningCutoffLevel'])+'|',
           'TI $\geq$ '+str(ParamsDict['TuningCutoffLevel'])]
 
 axs3.pie(Proportions, labels=Labels, autopct='%1.1f%%', colors=ParamsDict['PieColors'])
@@ -445,11 +450,13 @@ axs3.text(1., 0., 'N = '+str(TotalNumIndices), fontsize=12,  transform=axs3.tran
 #             ParamsDict['TuningCutoffLevel'] + '_TIBound_' +
 #             ParamsDict['TuningType']+'.svg')
 FigureTitle = (File[0:19] + ' distribution and proportions of trace-based cell tuning indices\n' 
-    + 'TI calc. domain = ' + str(ParamsDict['SearchDomain']) 
-    + ', TI boundaries $\geq$ |%2.2f|' % (ParamsDict['TuningCutoffLevel'],))
+    + ' tuning time domain = ' + str(ParamsDict['SearchDomain']) 
+#    + ', threshold for tuned cells = |%2.2f|' % (ParamsDict['TuningCutoffLevel'],)
+    )
 
 fig2.suptitle(FigureTitle)
-
-fig2.savefig(Path+os.sep + File[0:19] + '_TuningIndexHistoAndPie_' + 
-             ParamsDict['TuningCutoffLevel'] + '_TIBound_' +
-             ParamsDict['TuningType']+'.svg')
+fig2.set_size_inches(11., 8.5)
+fig2.savefig(Path+os.sep + File[0:19] + '_TuningIndexHistoAndPie_' +
+             str(ParamsDict['SearchDomain']) + '_' +
+             str(ParamsDict['TuningCutoffLevel']) + '_' +
+             ParamsDict['TuningType'] + '.svg')

@@ -10,6 +10,12 @@ import pandas as pd
 from PeriEventTraceFuncLib import *
 from collections import defaultdict
 
+import os
+
+import tkinter as tk
+from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import asksaveasfilename
+
 # Paths to data in JSON formatted files.  
 # NOTE: These have been commented out so that the SlidingWindowAnalysisFunc 
 # function can be called without these global level variables being 
@@ -75,9 +81,9 @@ from collections import defaultdict
 #PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2019-01-24/2019-01-24-11-36-02_new_unique_C.json'
 #SavePath = '/home/thugwithyoyo/CaTransDecoding/Output/2019-01-24-11-36-02/2019-01-24-11-36-02_new_unique_400ms_SamFiltered'
 
-PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2019-01-24/2019-01-24-11-50-23_new_unique_B.json'
-PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2019-01-24/2019-01-24-11-50-23_new_unique_C.json'
-SavePath = '/home/thugwithyoyo/CaTransDecoding/Output/2019-01-24-11-50-23/2019-01-24-11-50-23_new_unique_400ms_SamFiltered'
+#PathToBehavFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2019-01-24/2019-01-24-11-50-23_new_unique_B.json'
+#PathToFluorFile = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData/2019-01-24/2019-01-24-11-50-23_new_unique_C.json'
+#SavePath = '/home/thugwithyoyo/CaTransDecoding/Output/2019-01-24-11-50-23/2019-01-24-11-50-23_new_unique_400ms_SamFiltered'
 
 
 # Define ParamsDict, the dictionary that contains the parameters for
@@ -86,13 +92,14 @@ SavePath = '/home/thugwithyoyo/CaTransDecoding/Output/2019-01-24-11-50-23/2019-0
 
 ParamsDict = defaultdict(dict)
 #ParamsDict['RefEventsList'] = ['M6T0_Entry_ts', 'M7T1_Entry_ts']
-ParamsDict['RefEventsList'] = ['M6T0_Entry_ts', 'M6T1_Entry_ts']
+#ParamsDict['RefEventsList'] = ['M6T0_Entry_ts', 'M6T1_Entry_ts']
+ParamsDict['RefEventsList'] = ['M7T0_Entry_ts', 'M7T1_Entry_ts']
 
 # Scalar values assigned to event types listed above.
 ParamsDict['AssignedEventVals'] = [-1, 1]
 
 # Set parameters for peri-event extraction
-ParamsDict['BoundaryWindow'] = [-1., 2.]
+ParamsDict['BoundaryWindow'] = [-2., 2.]
 ParamsDict['StepWidth'] = 0.1
 ParamsDict['WindowWidth'] = 0.4
 
@@ -243,14 +250,56 @@ def SlidingWindowAnalysisFunc(BehavDict, CellFluorTraces_Frame, SavePath, Params
     # SavePath is an arguement above.  The following script requires it 
     exec(open('./ShelveWorkspaceScript.py').read())
     
-    
+###############################################################################
+#########                   START EXECUTION SCRIPT                    #########
+###############################################################################
+# Acquire path of workspace to load.
+# Set defualt parent directories
+DataRootDir = '/home/thugwithyoyo/CaTransDecoding/CalciumImagingData'
+SaveRootDir = '/home/thugwithyoyo/CaTransDecoding/Output'
 
+# Start file dialogs 
+root = tk.Tk()
+
+# Prompt user to navigate to, and select, the session behavior file
+PathToBehavFile = askopenfilename(title='Select session behavior file',
+                                  filetypes=[("json files","*.json"), 
+                                             ("csv files", "*.csv")],
+                                  initialdir=DataRootDir)
+
+# Prompt user to navigate to, and select, the session imaging file
+PathToFluorFile = askopenfilename(title='Select session fluorescence record file',
+                                  filetypes=[("json files","*.json"),
+                                             ("csv files", "*.csv")],
+                                  initialdir=DataRootDir)
+
+
+# Determine parent directory and filename from complete path.
+Drive, Path_and_file = os.path.splitdrive(PathToBehavFile)
+Path, File = os.path.split(Path_and_file)
+
+# Extract session id from filename
+SessionID = File[0:19]
+
+# Construct a  workspace filename to use as save default
+SaveFilename =  SessionID + '_new_unique_400ms_SamFiltered'
+DefaultSavePath = SaveRootDir + os.path.sep + SessionID 
+
+# Prompt user to select default
+SavePath = asksaveasfilename(title='Set workspace save path',
+                             initialdir=DefaultSavePath,
+                             initialfile=SaveFilename)
+
+# End file dialogs
+root.withdraw()
+
+# Run sliding window analysis using above-defined subroutine.
 SlidingWindowAnalysisFunc(PathToBehavFile, PathToFluorFile, SavePath, ParamsDict)
 #SlidingWindowAnalysisFunc(PathToBehavFile, FluorDataframe_Combined, SavePath, ParamsDict)
 #SlidingWindowAnalysisFunc(BehavDict_Combined, CaImag_df_Combined, SavePath, ParamsDict)
 
 # Figure generation code below moved to GenerateDecodePlotsScript.py.  Use the
-# script to generate plots from shelved workspaces generated from this function.
+# script to generate plots from shelved workspaces generated from above-called function.
 # 
 #RestoreFilePath = SavePath +'.dat'
 #exec(open('./RestoreShelvedWorkspaceScript.py').read())

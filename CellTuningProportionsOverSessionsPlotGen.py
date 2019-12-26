@@ -208,13 +208,20 @@ ProportionsArray = ProportionsArray[SortMap,:]
     
 fig, axs = plt.subplots(1,1) 
 
+# Generate input values for plot generation.
 PlotType = 'errorbars'
 (NumDatapoints, NumCategories) = ProportionsArray.shape
 xVals = np.outer(np.ones_like(ProportionsArray[:,0]),np.array([[1, 2, 3]]))
 Labels = np.array(['zone2 sel.', 'non-tuned', 'zone1 sel.'])
 ScatterDatapointsLabel='session prop.'
 ColumnOrder = np.array([1, 2, 0])
+
+# Session symbol coding.
 SymbolSet = np.array(['o', 'v', '^', 's', 'p', 'P', '*', 'H', 'X', 'D', 'd'])
+
+# Use only circles as markers for sessions.
+#SymbolSet = np.empty((15,),dtype=object)
+#SymbolSet[:] = 'o'
 
 # Scatter plot visual parameter settings
 MarkerSize = 80
@@ -235,12 +242,17 @@ medianprops = dict(linestyle='-', linewidth=3, color='red')
 meanpointprops = dict(marker='D', markeredgecolor='black',
                       markerfacecolor='firebrick')
 meanlineprops = dict(linestyle='--', linewidth=2.5, color='purple')
-    
+
+# Add "jitter" to x locations of distribution groups
+JitterMag = 0.2
+JitterArray = JitterMag*(np.random.random(xVals.shape) - 0.5)
+
+# Plot generation blocks: boxplots or scatter plots over average-valued bars.
 if PlotType == 'boxplot':
     
     for i in np.arange(0, NumDatapoints):
         
-        axs.scatter(xVals[i, :], ProportionsArray[i, ColumnOrder], 
+        axs.scatter(xVals[i, :] + JitterArray[i, :], ProportionsArray[i, ColumnOrder], 
                     marker=SymbolSet[i], color='gray', s=MarkerSize, alpha=0.5, 
                     label=SessionNamesArray[i])
     
@@ -264,7 +276,7 @@ elif PlotType == 'errorbars':
     
     for i in np.arange(0, NumDatapoints):
         
-            axs.scatter(xVals[i, :], ProportionsArray[i, ColumnOrder], 
+            axs.scatter(xVals[i, :] + JitterArray[i, :], ProportionsArray[i, ColumnOrder], 
                     marker=SymbolSet[i], color='gray', s=MarkerSize, alpha=0.5, 
                     label=SessionNamesArray[i])
     
