@@ -18,7 +18,15 @@ root = tk.Tk()
 RestoreFilePath = askopenfilename()
 root.withdraw()
 
-exec(open('./RestoreShelvedWorkspaceScript.py').read())
+# Open workspace.
+#exec(open('./RestoreShelvedWorkspaceScript.py').read())
+try:
+    
+    exec(open('./RestoreShelvedWorkspaceScript.py').read())
+    
+except:
+    
+    print('Unshelving error.  Will attempt to continue...')
      
 drive, path_and_file = os.path.splitdrive(RestoreFilePath)
 path, file = os.path.split(path_and_file)
@@ -32,25 +40,27 @@ fig1.suptitle(FigureTitle)
 # Plot performance and performance control plots
 PlotSpecDict = {'measure': 'performance',
                 'measure_median': 'performance_median',
-                'measure_CLs': 'performance_CLs',
-                'measure_SE': 'performance_SE',
-                'color':'blue'}
+#                'measure_bars': 'performance_CLs',
+                'measure_bars': 'performance_SE_bounds',
+                'color':'orange'}
  
 GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict, 
                      axs1, 'fw_sliding')
  
 PlotSpecDict = {'measure': 'performance_median',
                 'measure_median': 'performance_median',
-                'measure_CLs': 'performance_CLs',
-                'measure_SE': 'performance_SE',
-                'color':'lightblue'}
+#                'measure_bars': 'performance_CLs',
+                'measure_bars': 'performance_SE_bounds',
+                'color':'gray'}
  
 GenerateConfIntsPlot(EventsShuffled, EventsShuffled, PlotSpecDict, 
                      axs1, 'fw_sliding')
  
 axs1.set_xbound(lower=ParamsDict['BoundaryWindow'][0], 
                 upper=ParamsDict['BoundaryWindow'][1])
-axs1.set_ybound(lower=0.4, upper=1.)
+axs1.set_ybound(lower=0., upper=1.)
+axs1.set_yticks([0., 0.5, 1.])
+axs1.set_yticklabels(['0', '50', '100'])
 
 # Save figure
 PerfFigSavePath = (path + os.sep + file[0:19] + '_Perf_' + 'SW_w' + 
@@ -65,18 +75,18 @@ fig2.suptitle(FigureTitle)
  
 PlotSpecDict = {'measure': 'mutual_info',
                 'measure_median': 'mutual_info_median',
-                'measure_CLs': 'mutual_info_CLs',
-                'measure_SE': 'mutual_info_SE',
-                'color':'blue'}
+ #               'measure_bars': 'mutual_info_CLs',
+                'measure_bars': 'mutual_info_SE_bounds',
+                'color':'orange'}
  
 GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict, 
                      axs2, 'fw_sliding')
  
 PlotSpecDict = {'measure': 'mutual_info_median',
                 'measure_median': 'mutual_info_median',
-                'measure_CLs': 'mutual_info_CLs',
-                'measure_SE': 'mutual_info_SE',
-                'color':'lightblue'}
+#                'measure_bars': 'mutual_info_CLs',
+                'measure_bars': 'mutual_info_SE_bounds',
+                'color':'gray'}
  
 GenerateConfIntsPlot(EventsShuffled, EventsShuffled, PlotSpecDict, 
                      axs2, 'fw_sliding')

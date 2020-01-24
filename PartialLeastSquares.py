@@ -32,12 +32,16 @@ def PLS1(X, y, l):
     #
     # This routine constructs a linear regression estimate between X and Y as
     #
-    #   Y = X B + B_0    
+    #   Y = X B + B_0.
+    #   
     #
     #### Argument definitions ####
     #
-    # X: (n x m) data matrix.  Value n is the total number of trials, m is the
-    # product of no. sources and no. of peri-event samples
+    # X: (n x m) data matrix-- or more accurately called the matrix of 
+    # predictors.  Value n is the total number of trials, m is the
+    # product of no. sources (e.g. cells) with the no. of peri-event samples (e.g.
+    # snippets of calcium fluorescence level over time relative to a behavioral
+    # event of some kind).
     #
     # y: (n x p) response vector (in this case p = 1).  Value n is the total 
     # number of trials.  A response to each trial is either scaler or binary 
@@ -75,25 +79,47 @@ def PLS1(X, y, l):
     # Set pre-loop variables for iteration number 0
     X_Current = X
     
+    # Compute first weight vector: the normalized inner product of the first 
+    # vector of data matrix with the output vector.  Recall that "@" is numpy's
+    # matrix multiplication operator.
     W[:, 0] = np.squeeze(X.transpose() @ y / np.linalg.norm(X.transpose() @ y))
     
     # Iterate to calculate latent sources
     for k in l_indices:
         
+        # Take matrix product of current data vector and weight vector to
+        # compute current score vector.
         T_Scores[:, k] = X_Current @ W[:, k]
         
+        # Compute squared magnitude of T_scores vector for subsequent scaling
         T_Scores_MagSquared = T_Scores[:, k].transpose() @ T_Scores[:, k]
         
+        # Scale the current score vector
         T_Scores[:, k] = T_Scores[:, k] / T_Scores_MagSquared
         
+        # Take matrix product of current data vector with the current scores
+        # vector to calculate current loadings vector of the input model 
+        # equation.
         P_Loadings[:, k] = X_Current.transpose() @ T_Scores[:, k]
         
+        # Take matrix product of output vector with the scores vector to 
+        # compute the current loadings vector on the output model equation.
+        # Note dimensionality of the resulting array must reduced to write
+        # the result into the matrix of  Q of loading vectors.
         q_Loadings[0, k] = np.squeeze(y.transpose() @ T_Scores[:, k])
         
+        # Check the for-loop termination condition.  If met, set the number
+        # of latents to include, l, to the value of the current iteration
+        # index, k, so as to skip further optimization (i.e. learning updates in
+        # the next step).
         if (q_Loadings[0, k] == 0.):
             
             l = k  # exit for loop
             
+        # If the current q_Loadings are sub-optimal (i.e. q_Loadings[0, k] != 0.)
+        # then update the current data vector (via NIPALS iterative learning 
+        # rule) and compute the weight ("mixing") vector to be used on the 
+        # next iteration of the for-loop.
         if (k < (l - 1)):
             
             X_Current = X_Current - T_Scores_MagSquared * (
@@ -101,7 +127,8 @@ def PLS1(X, y, l):
             
             W[:, k + 1] = np.squeeze(X_Current.transpose() @ y)
     
-    # Compute partial least squares regression estimates B and B_0 for Y = X @ B + B_0       
+    # Compute partial least squares regression estimates B and B_0 for Y = X @ B + B_0.
+    # Note that this calculation involves a matrix inversion.         
     B = W @ np.linalg.inv(P_Loadings.transpose() @ W) @ q_Loadings.transpose()
     
     B_0 = q_Loadings[0, 0] - P_Loadings[:, 0].transpose() @ B
