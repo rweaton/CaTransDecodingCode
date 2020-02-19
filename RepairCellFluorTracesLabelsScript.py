@@ -6,17 +6,12 @@ Created on Tue Nov 12 15:27:19 2019
 @author: thugwithyoyo
 """
 
-### Appears to work properly now. Shelve would not save the variable
-### named: 'path'.  Fixed: 2019-12-02
 #########################################################################
 ### !!!!! This program corrupts shelve files; fix before using !!!!!!####
 #########################################################################
+### Appears to work properly now! Shelve would not save the variable
+### named: 'path'.  Fixed: 2019-12-02
 
-
-from PeriEventTraceFuncLib import *
-import numpy as np
-from CaTraceNormalizer import *
-from collections import defaultdict
 import os
 
 import CalciumImagingFluorProcessing as CIFP

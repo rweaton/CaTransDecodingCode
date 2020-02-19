@@ -11,7 +11,7 @@ from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
 
-import PeriEventTraceFuncLib
+import PeriEventTraceFuncLib as PETFL
 
 #nBins = 5
 #x = DifferenceMagnitudes[0,:]
@@ -96,7 +96,7 @@ def TuningAndMappingParser(CellFluorTraces_Frame, Tuning_Frame,
     FilteredCellIDs = CellIDs[~RemovalFilt]
     
     # Generate a unique list of pairs from entries in CellIDs
-    UniqueIndexPairsList, UniquePairsList = UniquePairsGenerator(FilteredCellIDs)
+    UniqueIndexPairsList, UniquePairsList = PETFL.UniquePairsGenerator(FilteredCellIDs)
     
     # Count number of pairs
     (NumPairs, _) = UniquePairsList.shape

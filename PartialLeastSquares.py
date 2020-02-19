@@ -133,4 +133,11 @@ def PLS1(X, y, l):
     
     B_0 = q_Loadings[0, 0] - P_Loadings[:, 0].transpose() @ B
     
-    return B, B_0
+    ModelDict = {
+                  'W': W,
+                  'T_Scores': T_Scores,
+                  'P_Loadings': P_Loadings,
+                  'q_Loadings': q_Loadings
+                 }
+    
+    return B, B_0, ModelDict

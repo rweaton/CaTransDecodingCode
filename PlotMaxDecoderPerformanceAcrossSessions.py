@@ -10,12 +10,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import os
+import shelve
 
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 
 def GetSessionDecodingMaximum():
     
+    global Performance
     # Acquire path of workspace to load.
     root = tk.Tk()
     RestoreFilePath = askopenfilename()
@@ -25,7 +27,30 @@ def GetSessionDecodingMaximum():
     #exec(open('./RestoreShelvedWorkspaceScript.py').read())
     try:
         
-        exec(open('./RestoreShelvedWorkspaceScript.py').read())
+        #exec(open('./RestoreShelvedWorkspaceScript.py').read())
+        # Save path of directory that contains this script
+        ScriptDir = os.getcwd()
+        
+        (PathToFile, Filename) = os.path.split(RestoreFilePath)
+        
+        # Change to directory that contains file to be loaded.
+        os.chdir(PathToFile)
+         
+        # Open a shelf dictionary object that contains stored variables
+        my_shelf = shelve.open(os.path.splitext(Filename)[0])
+        
+        # Iterate through dictionary contents and write each to the global variables
+        # list.
+        for key in my_shelf:
+            
+            globals()[key]=my_shelf[key]
+            #locals()[key]=my_shelf[key]
+        
+        # Close the shelve object
+        my_shelf.close()
+        
+        # Return to script directory
+        os.chdir(ScriptDir)
         
     except:
         

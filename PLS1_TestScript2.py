@@ -8,7 +8,7 @@ Created on Sun Jan 12 18:39:07 2020
 
 import numpy as np
 import PartialLeastSquares as pls
-import hwfunclib as HFL
+import hwfunclib_limited as HFL
 import matplotlib.pyplot as plt
 
 # Set parameters for PLS
@@ -28,7 +28,9 @@ nSeeds = 5
 # added to construct predictors
 #SignalType = 'sine'
 #SignalType = 'gaussian'
-SignalType = 'multishape'
+#SignalType = 'multishape_square'
+#SignalType = 'multishape_triangle'
+SignalType = 'multishape_sawtooth'
 
 # Set the domain boundaries and sampling rate of the time window corresponding
 # to predictor vectors. 
@@ -54,8 +56,8 @@ FreqVec = np.ones((nSeeds,), dtype=float)
 #FreqVec = np.arange(1, nSeeds + 1, 1)
 
 # Build array of phases
-#PhaseVec = np.zeros((nSeeds,), dtype=float)
-PhaseVec = (np.pi/4.)*np.arange(0, nSeeds, 1)
+PhaseVec = np.zeros((nSeeds,), dtype=float)
+#PhaseVec = (np.pi/4.)*np.arange(0, nSeeds, 1)
 
 
 ############## Parameters for Gaussian predictor seed vectors. ################
@@ -97,13 +99,35 @@ for i in np.arange(0, nSeeds):
         
         SeedVecs[i, :] = AmpVec[i]*np.exp(-(1./2.)*((t_vec - MeanVec[i])/(StdDevVec[i]))**2)
 
-    if SignalType == 'multishape':
+    if SignalType == 'multishape_square':
         
         FourierSeries = np.zeros_like(t_vec)
         
         for n in np.arange(1, 2*i + 2,  2):
             
             FourierSeries = FourierSeries + (4./np.pi)*(1./n)*np.sin(2*n*np.pi*FreqVec[i]*t_vec)
+            
+        SeedVecs[i, :] = AmpVec[i]*FourierSeries
+        
+    if SignalType == 'multishape_triangle':
+        
+        FourierSeries = np.zeros_like(t_vec)
+        
+        for n in np.arange(1, 2*i + 2, 2):
+            
+            FourierSeries = FourierSeries + (8./(np.pi**2))*(((-1.)**(
+                    (n - 1)/2))/(n**2))*np.sin(2*n*np.pi*FreqVec[i]*t_vec)
+    
+        SeedVecs[i, :] = AmpVec[i]*FourierSeries
+        
+    if SignalType == 'multishape_sawtooth':
+        
+        FourierSeries = np.zeros_like(t_vec)
+        
+        for n in np.arange(1, i + 2, 1):
+            
+            FourierSeries = FourierSeries + (1./2.) - (1./np.pi)*(
+                    1./n)*np.sin(2*n*np.pi*FreqVec[i]*t_vec)
             
         SeedVecs[i, :] = AmpVec[i]*FourierSeries
 

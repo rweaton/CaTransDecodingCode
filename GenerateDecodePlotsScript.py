@@ -7,7 +7,10 @@ Created on Sat Oct  5 15:38:09 2019
 """
 import numpy as np
 import pandas as pd
-from PeriEventTraceFuncLib import *
+import matplotlib.pyplot as plt
+
+import PeriEventTraceFuncLib as PETFL
+
 from collections import defaultdict
 import os
 import tkinter as tk
@@ -44,7 +47,7 @@ PlotSpecDict = {'measure': 'performance',
                 'measure_bars': 'performance_SE_bounds',
                 'color':'orange'}
  
-GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict, 
+PETFL.GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict, 
                      axs1, 'fw_sliding')
  
 PlotSpecDict = {'measure': 'performance_median',
@@ -53,7 +56,7 @@ PlotSpecDict = {'measure': 'performance_median',
                 'measure_bars': 'performance_SE_bounds',
                 'color':'gray'}
  
-GenerateConfIntsPlot(EventsShuffled, EventsShuffled, PlotSpecDict, 
+PETFL.GenerateConfIntsPlot(EventsShuffled, EventsShuffled, PlotSpecDict, 
                      axs1, 'fw_sliding')
  
 axs1.set_xbound(lower=ParamsDict['BoundaryWindow'][0], 
@@ -79,7 +82,7 @@ PlotSpecDict = {'measure': 'mutual_info',
                 'measure_bars': 'mutual_info_SE_bounds',
                 'color':'orange'}
  
-GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict, 
+PETFL.GenerateConfIntsPlot(ConfInts, Performance, PlotSpecDict, 
                      axs2, 'fw_sliding')
  
 PlotSpecDict = {'measure': 'mutual_info_median',
@@ -88,7 +91,7 @@ PlotSpecDict = {'measure': 'mutual_info_median',
                 'measure_bars': 'mutual_info_SE_bounds',
                 'color':'gray'}
  
-GenerateConfIntsPlot(EventsShuffled, EventsShuffled, PlotSpecDict, 
+PETFL.GenerateConfIntsPlot(EventsShuffled, EventsShuffled, PlotSpecDict, 
                      axs2, 'fw_sliding')
  
 axs2.set_xbound(lower=ParamsDict['BoundaryWindow'][0], 

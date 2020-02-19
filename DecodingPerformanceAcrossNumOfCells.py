@@ -12,7 +12,9 @@ import matplotlib.pyplot as plt
 import CalciumImagingFluorProcessing as CIFP
 #import SlidingWindowAnalysisFunc as SWAF
 import CalciumTraceDataframeFuncLib as CTDFL
-from PeriEventTraceFuncLib import *
+#from PeriEventTraceFuncLib import *
+import PeriEventTraceFuncLib as PETFL
+
 from collections import defaultdict
 import shelve
 import os
@@ -123,9 +125,9 @@ for i in np.arange(0, NumSamplingDicts):
         
         # Extract traces from the desired time domain on which decoding will
         # be performed.
-        PeriEventExtractorDict = PeriEventExtractor_Trace(BehavDict, 
-                                        SubsetFluorTraces_Frame, RefEventsDict, 
-                                        ParamsDict['BoundaryWindow'])
+        PeriEventExtractorDict = PETFL.PeriEventExtractor_Trace(BehavDict, 
+                                    SubsetFluorTraces_Frame, RefEventsDict, 
+                                    ParamsDict['BoundaryWindow'])
         
         # Generate a set of indices to test the inclusion portion of the 
         # performance code.
@@ -136,7 +138,7 @@ for i in np.arange(0, NumSamplingDicts):
         
         # Apply decoding routine to trace snippet.  Store performance output
         # in output array of dicts
-        PerfDist[DrawNum] = PLS_DecoderPerformance(PeriEventExtractorDict, 
+        PerfDist[DrawNum] = PETFL.PLS_DecoderPerformance(PeriEventExtractorDict, 
                                     ParamsDict['NumLatents'])['performance']
         
         # Shuffle outcome labels.
@@ -147,8 +149,8 @@ for i in np.arange(0, NumSamplingDicts):
         
         # Rerun the decoder using the list of shuffled outcomes and record
         # performance in the shuffled output array of dicts.  
-        ShuffledPerfDist[DrawNum] = PLS_DecoderPerformance(PeriEventExtractorDict, 
-                                    ParamsDict['NumLatents'])['performance']       
+        ShuffledPerfDist[DrawNum] = PETFL.PLS_DecoderPerformance(
+                PeriEventExtractorDict, ParamsDict['NumLatents'])['performance']       
 
     # Add outcomes arrays for this particular value of draw size to the
     # corresponding array of dicts.

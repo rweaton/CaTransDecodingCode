@@ -134,7 +134,7 @@ def PeriEventTraceExtractor(CellFluorTraces_Frame, RefEvents, BoundaryWindow):
   # Generate an index list for later referencing
   (nSamples, nColumns) = CellFluorTraces_Frame.shape
   
-  # Cell columns indices.  The first Column contains timestamps
+  # Cell columns indices.  The first Column (index=0) contains timestamps
   CellColumnsIndices = np.arange(1, nColumns)
   
   # Extract array of timestamps.

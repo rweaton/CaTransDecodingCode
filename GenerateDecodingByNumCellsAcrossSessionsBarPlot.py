@@ -175,10 +175,10 @@ ySEs = np.divide(np.std(BarVals[:,1:-1], axis=0), np.sqrt(NumEntries))
 #             axis=0), yerr=np.std(BarVals[:,1:-1], axis=0), 
 #             color='blue', ecolor='blue', fmt='.-', 
 #             label='Decoding with subsampled units')
-
+ErrorBarFormat = ''
 # Plot errobars for the subsampled sets.
 ax2.errorbar(np.arange(1, NumBarsPerGroup-1), np.mean(BarVals[:,1:-1], axis=0), 
-             yerr=ySEs, color='orange', ecolor='orange', fmt='.-',
+             yerr=ySEs, color='orange', ecolor='orange', fmt=ErrorBarFormat,
              markersize=MarkerSize)
 
 # Plot errorbar for the all cells included set.
@@ -189,9 +189,8 @@ ySEs = np.divide(np.std(BarVals[:,0], axis=0), np.sqrt(NumEntries))
 #ax2.errorbar(np.array([0]), np.mean(BarVals[:,0], axis=0), 
 #             yerr=np.std(BarVals[:,0], axis=0), color='black', 
 #             ecolor='black', fmt='.-', label='Decoding with all units')
-
 ax2.errorbar(np.array([0]), np.mean(BarVals[:,0], axis=0), 
-             yerr=ySEs, color='orange', ecolor='orange', fmt='.-',
+             yerr=ySEs, color='orange', ecolor='orange', fmt=ErrorBarFormat,
              markersize=MarkerSize, label='Observed outcomes')
 
 # Determine the value along the y-axis at which to plot the mean of 
@@ -203,17 +202,19 @@ ax2.errorbar(np.array([0]), np.mean(BarVals[:,0], axis=0),
 #ShuffledySEs = np.divide(np.std(AgrShuffledPerfMeans[:, EntriesFilt], axis=0, ddof=1), np.sqrt(NumEntries))
 
 #ax2.plot(np.array([0, NumBarsPerGroup-2]), np.array([ShuffledVal, ShuffledVal]), 'c--', label='Shuffled performance (all units)')
+
+
 ySEs = np.divide(np.std(BarVals[:,-1], axis=0), np.sqrt(NumEntries))
 #ySEs = np.std(BarVals[:,-1], axis=0)
 ax2.errorbar(np.array([0]), np.mean(BarVals[:,-1], axis=0), 
-             yerr=ySEs, color='gray', ecolor='gray', fmt='.-', 
+             yerr=ySEs, color='gray', ecolor='gray', fmt=ErrorBarFormat, 
              markersize=MarkerSize, label='Shuffled outcomes')
 
 # Calculate Standard Errors of the Means statistics to plot extents of errorbars
 #ySEs = np.divide(np.std(ShuffledBarVals[:,1:-1], axis=0), np.sqrt(NumEntries))
 ySEs = np.std(ShuffledBarVals[:,1:-1], axis=0)
 ax2.errorbar(np.arange(1, NumBarsPerGroup-1), np.mean(ShuffledBarVals[:,1:-1], axis=0), 
-             yerr=ySEs, color='lightgray', ecolor='lightgray', fmt='.-',
+             yerr=ySEs, color='lightgray', ecolor='lightgray', fmt=ErrorBarFormat,
              markersize=MarkerSize)
 
 #ax2.errorbar(np.array([0]), ShuffledBarVals[0], 
@@ -239,5 +240,5 @@ ax2.spines['right'].set_visible(False)
 
 # Set title of plot.
 ax2.set_title('PLS-DA: 400ms window, slid over 100ms increments')
-fig2.suptitle('Trace decoding accuracy averaged over 11 sessions')
+fig2.suptitle('Trace decoding accuracy averaged over '+ str(NumSessions) +' sessions')
 #ax.set_xticklabels(SessionNames, rotation=15, ha="right", va="center")

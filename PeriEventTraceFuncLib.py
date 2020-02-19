@@ -6,11 +6,14 @@ Created on Wed May 29 22:07:25 2019
 @author: thugwithyoyo
 """
 import numpy as np
-import CalciumImagingBehaviorAnalysis as CIBA
+import pandas as pd
 from collections import defaultdict
+
+import CalciumImagingBehaviorAnalysis as CIBA
 import CalciumImagingFluorProcessing as CIFP
 import PartialLeastSquares as PLS
-import hwfunclib as HFL
+import hwfunclib_limited as HFL
+
 import os
 import shelve
 from tkinter import *
@@ -108,6 +111,40 @@ def RemoveRepeatTargetEntries(BehavDict, RefEventsList, RelativeTolWindow):
                                             RapidRepeatDict)
 
     return EventFilters
+
+def EarlyAndLateBehavEventRemoval(BehavDict, CellFluorTraces_Frame, 
+                                  RefEventsDict, BoundaryWindow):
+    
+    # This routines removes events that occured either too early, or too late, 
+    # with respect to the timeframe of the calcium fluorescence record, for 
+    # proper extraction of their surrounding snippets of trace activity. That 
+    # is, events that would otherwise cause extraction of surrouding trace 
+    # snippets that would be incomplete (not of full length).
+    
+    # Count the number of event types to be decoded.
+    EventIndices = np.arange(0, len(RefEventsDict['RefEventsList']))
+    
+    # Calculate earlymost and latemost thesholds for behavioral events to have
+    # full length snippets.   
+    EarlyThresh = CellFluorTraces_Frame['Timestamps'].values[0] - BoundaryWindow[0]
+    LateThresh = CellFluorTraces_Frame['Timestamps'].values[-1] - BoundaryWindow[1]
+    
+    # Iterate over collections of events of each type. For each collection,
+    # generate a filter that keeps only events that occured after the early 
+    # threshold (EarlyThresh) and a filter keeping events that occured before
+    # the late threshold (LateThresh).  Write list changes to the behavior
+    # dictionary.
+    for i in EventIndices:
+        
+        # Generate a boolean filter for keeping within-threshold event occurances
+        EventsFilt = (BehavDict[RefEventsDict['RefEventsList'][i]].values > EarlyThresh) & \
+                     (BehavDict[RefEventsDict['RefEventsList'][i]].values < LateThresh)
+        
+        # Remove super-threshold event occurances from behavior dictionary
+        BehavDict[RefEventsDict['RefEventsList'][i]] = \
+            pd.Series(BehavDict[RefEventsDict['RefEventsList'][i]].values[EventsFilt])
+        
+    return BehavDict
     
 def PeriEventExtractor_Trace(BehavDict, CellFluorTraces_Frame, RefEventsDict, BoundaryWindow):
     
@@ -118,7 +155,7 @@ def PeriEventExtractor_Trace(BehavDict, CellFluorTraces_Frame, RefEventsDict, Bo
     # of behavioral events to be decoded and BoundaryWindow specifies the peri-
     # event domain around events that trace activity is to be extracted.
     
-    # Count the number of events to be decoded.
+    # Count the number of event types to be decoded.
     EventIndices = np.arange(0, len(RefEventsDict['RefEventsList']))
     
 #    # Determine particular subroutine to parse behavioral events.
@@ -275,7 +312,7 @@ def PLS_DecoderPerformance(PeriEventExtractorDict, nLatents, **kwargs):
         
         # Run Partial Least Squares regression on the complement set of peri-event
         # activity traces.
-        B, B_0 = PLS.PLS1(PEA_Array[ComplementFilt,:], TargetsVec[ComplementFilt,:], 
+        B, B_0, _ = PLS.PLS1(PEA_Array[ComplementFilt,:], TargetsVec[ComplementFilt,:], 
                           nLatents)
         
     
@@ -298,17 +335,7 @@ def PLS_DecoderPerformance(PeriEventExtractorDict, nLatents, **kwargs):
         # Obtain the index of the smallest distance. This is the target value
         # predicted by the PLS model.
         PredictedEventIndex = np.argmin(EuclideanDiffVals)
-        
-#        PredictedEventIndex = int(np.round(TestActivity @ B + B_0)[0,0])
-#        
-#        if PredictedEventIndex > np.max(TargetsVec):
-#            
-#            PredictedEventIndex = np.max(TargetsVec)
-#            
-#        if (PredictedEventIndex < 0):
-#            
-#            PredictedEventIndex = 0
-        
+                
         # Obtain the value of the actual target.
         TrueEventIndex = EventIndices[RefEventsDict['RefEventsList'] == np.array(CurrentEvent)][0]
         
@@ -318,8 +345,8 @@ def PLS_DecoderPerformance(PeriEventExtractorDict, nLatents, **kwargs):
         
     ######## End of leave-one-out cross validation. #########
         
-    # Compute the PLS regression matrices for the entire set of trials.   
-    B, B_0 = PLS.PLS1(PEA_Array[TrialSetIndices, :], 
+    # Compute the PLS regression matrices for the ENTIRE SET of (specified) trials.   
+    B, B_0, _ = PLS.PLS1(PEA_Array[TrialSetIndices, :], 
                       TargetsVec[TrialSetIndices, :], nLatents)
     
     # Run the PLS decoder on the complete dataset.
@@ -356,6 +383,93 @@ def PLS_DecoderPerformance(PeriEventExtractorDict, nLatents, **kwargs):
     
     #nIncorrects = np.sum(np.abs(np.squeeze(np.round(Predicted)) - TargetsVec.transpose()[0]))
 
+##### Routine to run novel dataset using existing model trained via PLS-regression
+def ApplyPLSModel(B, B_0, PeriEventExtractorDict, **kwargs):
+    
+    # Unpack dictionary contents
+    PEA_Array = PeriEventExtractorDict['PEA_Array']
+    TargetsVec = PeriEventExtractorDict['TargetsVec']
+    RefEventsDict = PeriEventExtractorDict['RefEventsDict']
+    TrialIndicesByEventDict = PeriEventExtractorDict['TrialIndicesByEventDict']
+    
+    # Index number of included events
+    EventIndices = np.arange(0, len(RefEventsDict['RefEventsList']))
+    
+    # Initialize confusion matrix from which mutual information will be determined.
+    ConfusionMatrix = np.zeros((len(RefEventsDict['RefEventsList']), 
+                                len(RefEventsDict['RefEventsList'])), dtype=int)
+        
+    # Determine number of trials (rows) and number of "features" (columns) from
+    # shape of peri-event activity array.
+    (nTotalTrials, nTotalFeatures) = PEA_Array.shape
+    #PEA_ArrayRowIndices = np.arange(0, nTotalTrials)
+    
+    # If the optional trials_to_include argument is present then set the trial
+    # set list to its value, otherwise use all trials.
+    if np.isin('trials_to_include', np.array(list(kwargs.keys()))):
+        
+        TrialSetIndices = kwargs['trials_to_include']
+    
+    else:
+        
+        TrialSetIndices = np.arange(0, nTotalTrials)
+    
+    # Determine the number of trials to be included    
+    (nTrialSetIndices,) = np.array(TrialSetIndices).shape
+    
+    # Run the PLS decoder on the specified dataset.
+    ModelOutput = PEA_Array[TrialSetIndices, :] @ B + B_0
+    
+    # Initialize array to contain proximity values
+    EuclideanDiffVals = np.empty((EventIndices.size,), dtype=float)
+        
+    # Initialize array to contain model predictions.
+    Predicted = np.empty((nTrialSetIndices, 1), dtype=int)
+    
+    # Initialize variable that specifies the actual event type on each trial
+    # iteration.
+    CurrentEvent = ''
+    
+    # Iterate over specified trials
+    for j in np.arange(0, nTrialSetIndices):
+            
+        # Find the event pool that contains the current trial
+        for Event in RefEventsDict['RefEventsList']:
+            
+            if np.isin(TrialSetIndices[j], TrialIndicesByEventDict[Event]):
+            
+                CurrentEvent = Event
+                
+        # Iterate over event types.
+        for i in EventIndices:
+            
+            # Calculate Euclidean distance
+            EuclideanDiffVals[i] = HFL.EuclideanDistanceCalculator(np.array(
+                    RefEventsDict['AssignedEventVals'][i]), ModelOutput[j])
+            
+        # Acquire index of closest event.  This is the model's prediction.
+        PredictedEventIndex = np.argmin(EuclideanDiffVals)
+        
+        # Obtain the value of the actual target.
+        TrueEventIndex = EventIndices[RefEventsDict['RefEventsList'] == np.array(CurrentEvent)][0]
+        
+        # Increment the cooresponding element of the confusion matrix (e.g. correct
+        # prediction (on diagonal), or incorrect prediction (off diagonal))
+        ConfusionMatrix[TrueEventIndex, PredictedEventIndex] += 1        
+        
+        # Record the prediction.
+        Predicted[j,:] = RefEventsDict['AssignedEventVals'][PredictedEventIndex]
+        
+        # Reset the CurrentEvent string for next trial iteration  
+        CurrentEvent = '' 
+    
+    return {    
+            'confusion_matrix' : ConfusionMatrix,
+            'performance' : HFL.PerformanceCalculator(ConfusionMatrix),
+            'mutual_info' : HFL.MutualInformationFromConfusionMatrix(ConfusionMatrix),
+            'targets' : np.asarray(TargetsVec, dtype=int),
+            'predicted' : Predicted
+            }
     
 ##### PLS_MonteCarlo
 def PLS_MonteCarlo(PeriEventExtractorDict, nLatents, nRepetitions, ConfLevel, ObservedPerfDict):

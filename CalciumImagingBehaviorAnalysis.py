@@ -7,10 +7,8 @@ Created on Thu Mar 28 13:33:38 2019
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import json
-import collections
 
 def CinePlexFromMatJSON_parser(PathToBehavFile):
     
